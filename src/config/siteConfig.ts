@@ -7,27 +7,29 @@ const SITE_LANG = "zh_CN";
 
 export const siteConfig: SiteConfig = {
 	// 站点标题
-	title: "Firefly",
+	title: "Ballad of Existence",
 
 	// 站点副标题
-	subtitle: "Demo site",
+	subtitle: "Record the fleeting mortal moments",
 
 	// 站点 URL
-	site_url: "https://firefly.cuteleaf.cn",
+	site_url: "https://飞行雪绒.top",
 
 	// 站点描述
 	description:
-		"Firefly 是一款基于 Astro 框架和 Fuwari 模板开发的清新美观且现代化个人博客主题模板，专为技术爱好者和内容创作者设计。该主题融合了现代 Web 技术栈，提供了丰富的功能模块和高度可定制的界面，让您能够轻松打造出专业且美观的个人博客网站。",
+		"Aria-7的个人博客，记录了我的学习过程和经验。06年男，目前做为大学生正在学习沉淀中",
 
 	// 站点关键词
 	keywords: [
+		"Aria-7",
+		"个人博客",
 		"Firefly",
 		"Fuwari",
 		"Astro",
 		"ACGN",
 		"博客",
 		"技术博客",
-		"静态博客",
+		"静态博客",		
 	],
 
 	// 主题色
@@ -79,7 +81,7 @@ export const siteConfig: SiteConfig = {
 			alt: "🍀",
 		},
 		// 导航栏标题
-		title: "Firefly",
+		title: "Ballad of Existence",
 		// 全宽导航栏，导航栏是否占满屏幕宽度
 		widthFull: false,
 		// 导航菜单对齐方式，left：左对齐，center：居中
@@ -91,7 +93,7 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点开始日期，用于统计运行天数
-	siteStartDate: "2025-01-01",
+	siteStartDate: "2026-05-21",
 
 	// 站点时区（IANA 时区字符串），用于格式化bangumi、rss里的构建日期时间等等..
 	// 示例："Asia/Shanghai", "UTC", 如果为空，则按照构建服务器的时区进行时区转换
