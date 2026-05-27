@@ -13,7 +13,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "Record the fleeting mortal moments",
 
 	// 站点 URL
-	site_url: "https://飞行雪绒.top",
+	site_url: "https://aria7-blog.vercel.app",
 
 	// 站点描述
 	description:
