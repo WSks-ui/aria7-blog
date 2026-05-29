@@ -31,8 +31,9 @@ const viewConfigStr = JSON.stringify({
 		source: i18n(I18nKey.musicSource),
 		sourceVideo: i18n(I18nKey.musicSourceVideo),
 		sourcePlaylist: i18n(I18nKey.musicSourcePlaylist),
-		sourceInputHint: i18n(I18nKey.musicSourceInputHint),
 		sourceApply: i18n(I18nKey.musicSourceApply),
+		sourceInputHint: i18n(I18nKey.musicSourceInputHint),
+		sourceInputHintPlaylist: i18n(I18nKey.musicSourceInputHintPlaylist),
 		sourceCurrent: i18n(I18nKey.musicSourceCurrent),
 		modeMeting: i18n(I18nKey.musicModeMeting),
 		modeLocal: i18n(I18nKey.musicModeLocal),
@@ -785,6 +786,9 @@ const widgetId =
                 });
                 updateBilibiliSectionVisibility(currentMode);
 
+                // Set correct input placeholder
+                updateInputPlaceholder();
+
                 // Load saved sources list
                 mgr.broadcastSavedSources();
 
@@ -816,6 +820,24 @@ const widgetId =
                 ui.bilibiliSection.classList.add('hidden');
             }
         }
+
+        function updateInputPlaceholder() {
+            if (!ui.sourceInput) return;
+            var typeEl = null;
+            ui.sourceTypeRadios.forEach(function (r) {
+                if (r.checked) typeEl = r;
+            });
+            ui.sourceInput.placeholder = (typeEl && typeEl.value === 'playlist')
+                ? cfg.i18n.sourceInputHintPlaylist
+                : cfg.i18n.sourceInputHint;
+        }
+
+        // Source-type radio change → update placeholder
+        ui.sourceTypeRadios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                updateInputPlaceholder();
+            });
+        });
 
         // Mode radio change → switch mode
         ui.modeRadios.forEach(function (radio) {

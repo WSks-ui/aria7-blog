@@ -63,6 +63,7 @@ enum I18nKey {
 	musicSourceVideo = "musicSourceVideo",
 	musicSourcePlaylist = "musicSourcePlaylist",
 	musicSourceInputHint = "musicSourceInputHint",
+	musicSourceInputHintPlaylist = "musicSourceInputHintPlaylist",
 	musicSourceApply = "musicSourceApply",
 	musicSourceCurrent = "musicSourceCurrent",
 	musicModeMeting = "musicModeMeting",
