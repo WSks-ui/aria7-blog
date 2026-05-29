@@ -1,6 +1,7 @@
 export default async function handler(req, res) {
 	const url = new URL(req.url, `https://${req.headers.host}`);
 	const bvid = url.searchParams.get("bvid");
+	const metaOnly = url.searchParams.get("meta") === "1";
 
 	if (!bvid) {
 		res.writeHead(400, { "Content-Type": "application/json" });
@@ -31,7 +32,23 @@ export default async function handler(req, res) {
 			);
 			return;
 		}
-		const cid = viewData.data.cid;
+		const v = viewData.data;
+		const cid = v.cid;
+
+		if (metaOnly) {
+			const info = {
+				title: v.title,
+				artist: v.owner ? v.owner.name : "",
+				pic: v.pic || "",
+				audio_url: `/api/bilibili-audio?bvid=${bvid}`,
+			};
+			res.writeHead(200, {
+				"Content-Type": "application/json",
+				"Access-Control-Allow-Origin": "*",
+			});
+			res.end(JSON.stringify(info));
+			return;
+		}
 
 		const playRes = await fetch(
 			`https://api.bilibili.com/x/player/playurl?bvid=${bvid}&cid=${cid}&qn=0&fnval=16&fnver=0&fourk=1`,
