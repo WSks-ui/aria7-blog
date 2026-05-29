@@ -49,7 +49,7 @@ export default async function handler(req, res) {
 				JSON.stringify({
 					title: v.title || "Unknown",
 					artist: v.owner?.name || "",
-					pic: v.pic || "",
+					pic: (v.pic || "").replace(/^http:/, "https:"),
 					audio_url: `/api/bilibili-audio?bvid=${bvid}`,
 				}),
 			);

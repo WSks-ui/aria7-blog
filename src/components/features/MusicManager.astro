@@ -266,8 +266,15 @@ const managerConfigStr = JSON.stringify({
     }
 
     async function fetchBilibiliCollectionTracks(mediaId) {
-        console.warn('Collection proxy not yet implemented, ID: ' + mediaId);
-        return [];
+        if (!mediaId) return [];
+
+        // Use collection proxy to get full playlist
+        var url = '/api/bilibili-collection?media_id=' + mediaId;
+        var res = await fetch(url);
+        if (!res.ok) throw new Error('Collection proxy HTTP ' + res.status);
+        var data = await res.json();
+        if (data.error) throw new Error(data.error);
+        return data.data || [];
     }
 
     // ── Lyrics ───────────────────────────────────────────────

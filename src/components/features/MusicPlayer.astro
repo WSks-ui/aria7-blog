@@ -877,11 +877,18 @@ const widgetId =
                 ui.btnSourceSave.textContent = '...';
                 ui.btnSourceSave.style.pointerEvents = 'none';
 
-                fetch('/api/bilibili-audio?bvid=' + id + '&meta=1')
+                var apiUrl = type === 'video'
+                    ? '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1'
+                    : '/api/bilibili-collection?media_id=' + encodeURIComponent(id) + '&meta=1';
+
+                fetch(apiUrl)
                     .then(function (r) { return r.json(); })
                     .then(function (meta) {
                         if (meta.error) throw new Error(meta.error);
-                        mgr.addSavedSource(type, id, meta.title || id, meta.artist || '', meta.pic || '');
+                        var title = meta.title || id;
+                        var artist = meta.artist || '';
+                        var pic = meta.pic || meta.cover || '';
+                        mgr.addSavedSource(type, id, title, artist, pic);
                         ui.sourceInput.value = '';
                     })
                     .catch(function (e) {
