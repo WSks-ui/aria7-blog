@@ -65,13 +65,12 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	//   1. 找一个B站音乐视频，复制它的 BV 号
 	//   2. 将 type 设为 "video"，id 填 BV 号（如 "BV1GJ411m8Q7"）
 	//   3. 也可使用收藏夹 ID，将 type 设为 "playlist"
-	// 注意：B站官方 API 返回的视频 URL 可能无法直接播放（需要 CORS 代理）
-	// 推荐使用第三方 B 站音频提取服务（如默认示例），或自行部署 B 站音频转发服务
+	// 默认使用 Bilibili 官方 DASH API 直接获取音频流，无需第三方服务
 	bilibili: {
 		// Bilibili 音频提取 API 地址
 		// 支持占位符：:type（video/playlist）, :id（BV号/收藏夹ID）, :r（随机数）
-		// 默认使用开源的 bilibili-api（返回 Meting 兼容格式），你也可以自建
-		api: "https://api.boos.ink/bilibili/api?type=:type&id=:id&r=:r",
+		// 留空则使用内置的 Bilibili 官方 API 直接获取音频流
+		api: "",
 		// 类型：video=单个视频, playlist=收藏夹/合集
 		type: "video",
 		// Bilibili 视频 BV 号（示例：BV1GJ411m8Q7）
@@ -81,6 +80,6 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		auth: "",
 		// 备用 API 配置（当主 API 失败时使用）
 		// 可添加其他兼容 Meting 格式的 Bilibili 音频提取服务
-		fallbackApis: ["https://api.bilibili.com/x/web-interface/view?bvid=:id"],
+		fallbackApis: [],
 	},
 };

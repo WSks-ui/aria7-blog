@@ -169,18 +169,24 @@ const managerConfigStr = JSON.stringify({
     }
 
     // ── Bilibili fetch ───────────────────────────────────────
+    // Bilibili 的音频获取分两层：
+    // 1) 先尝试用户配置的第三方 API（返回 Meting 兼容格式）
+    // 2) 如果全部失败，使用 Bilibili 官方 API 直接获取 DASH 音频流
     async function fetchBilibiliData() {
         if (!config.bilibili) return;
         var m = config.bilibili;
+        var type = m.type || 'video';
+        var id = m.id || '';
         var apis = [m.api].concat(m.fallbackApis || []);
 
+        // ── Layer 1: 第三方 API ────────────────────────────────
         for (var i = 0; i < apis.length; i++) {
             var baseApi = apis[i];
             if (!baseApi) continue;
             try {
                 var fetchUrl = baseApi
-                    .replace(':type', m.type || 'video')
-                    .replace(':id', m.id || '')
+                    .replace(':type', type)
+                    .replace(':id', id)
                     .replace(':r', Math.random());
                 if (m.auth) fetchUrl += '&auth=' + encodeURIComponent(m.auth);
 
@@ -188,33 +194,122 @@ const managerConfigStr = JSON.stringify({
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 var data = await res.json();
 
-                // Normalize: support both direct array and { data: [...] } wrappers
-                var items = null;
-                if (Array.isArray(data)) {
-                    items = data;
-                } else if (data.data && Array.isArray(data.data)) {
-                    items = data.data;
-                } else if (data.data && data.data.aid) {
-                    items = [data.data];
-                }
-
-                if (items && items.length > 0) {
-                    state.playlist = items.map(function (item) {
-                        return {
-                            name: item.title || item.name || 'Unknown',
-                            artist: item.author || item.artist || 'Unknown',
-                            url: item.url,
-                            pic: item.pic || item.cover || '',
-                            lrc: item.lrc || ''
-                        };
-                    });
+                var items = normalizeBilibiliResponse(data);
+                if (items && items.length > 0 && items[0].url) {
+                    state.playlist = items;
                     return;
                 }
             } catch (e) {
-                console.warn('Bilibili API failed for ' + baseApi, e);
+                console.warn('Bilibili third-party API failed for ' + baseApi, e);
             }
         }
+
+        // ── Layer 2: Bilibili 官方 API 获取真实音频流 ──────────
+        try {
+            if (type === 'video') {
+                var tracks = await fetchBilibiliVideoTracks(id);
+                if (tracks.length > 0) {
+                    state.playlist = tracks;
+                    return;
+                }
+            } else if (type === 'playlist') {
+                var tracks = await fetchBilibiliCollectionTracks(id);
+                if (tracks.length > 0) {
+                    state.playlist = tracks;
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('Bilibili official API fallback failed:', e);
+        }
+
         throw new Error('All Bilibili APIs failed');
+    }
+
+    function normalizeBilibiliResponse(data) {
+        var items = null;
+        if (Array.isArray(data)) {
+            items = data;
+        } else if (data.data && Array.isArray(data.data)) {
+            items = data.data;
+        } else if (data.data && data.data.aid) {
+            items = [data.data];
+        }
+        if (!items) return null;
+        return items.map(function (item) {
+            return {
+                name: item.title || item.name || 'Unknown',
+                artist: item.author || item.artist || '',
+                url: item.url || '',
+                pic: item.pic || item.cover || '',
+                lrc: item.lrc || ''
+            };
+        });
+    }
+
+    function bilibiliHeaders() {
+        return {
+            Referer: 'https://www.bilibili.com',
+            'User-Agent': navigator.userAgent
+        };
+    }
+
+    async function fetchBilibiliVideoTracks(bvid) {
+        if (!bvid) return [];
+
+        // Step 1: 获取视频信息 → 得到 title / pic / cid
+        var infoUrl = 'https://api.bilibili.com/x/web-interface/view?bvid=' + bvid;
+        var infoRes = await fetch(infoUrl, { headers: bilibiliHeaders() });
+        if (!infoRes.ok) throw new Error('Bilibili view API HTTP ' + infoRes.status);
+        var infoData = await infoRes.json();
+        if (infoData.code !== 0) throw new Error('Bilibili view API: ' + (infoData.message || 'unknown error'));
+        var v = infoData.data;
+        var cid = v.cid;
+
+        // Step 2: 获取 DASH 音频流 URL
+        var playUrl = 'https://api.bilibili.com/x/player/playurl?bvid=' + bvid
+            + '&cid=' + cid + '&qn=0&fnval=16&fnver=0&fourk=1';
+        var playRes = await fetch(playUrl, { headers: bilibiliHeaders() });
+        if (!playRes.ok) throw new Error('Bilibili playurl API HTTP ' + playRes.status);
+        var playData = await playRes.json();
+        if (playData.code !== 0) throw new Error('Bilibili playurl API: ' + (playData.message || 'unknown error'));
+
+        var audioUrl = playData.data && playData.data.dash && playData.data.dash.audio
+            && playData.data.dash.audio[0] && playData.data.dash.audio[0].baseUrl;
+        if (!audioUrl) throw new Error('No DASH audio URL in Bilibili response');
+
+        return [{
+            name: v.title || 'Unknown',
+            artist: (v.owner && v.owner.name) || '',
+            url: audioUrl,
+            pic: v.pic || '',
+            lrc: ''
+        }];
+    }
+
+    async function fetchBilibiliCollectionTracks(mediaId) {
+        if (!mediaId) return [];
+
+        // Step 1: 获取收藏夹视频列表
+        var favUrl = 'https://api.bilibili.com/x/v3/fav/resource/list?media_id=' + mediaId
+            + '&pn=1&ps=20';
+        var favRes = await fetch(favUrl, { headers: bilibiliHeaders() });
+        if (!favRes.ok) throw new Error('Bilibili fav API HTTP ' + favRes.status);
+        var favData = await favRes.json();
+        if (favData.code !== 0) throw new Error('Bilibili fav API: ' + (favData.message || 'unknown error'));
+        var medias = favData.data && favData.data.medias;
+        if (!medias || medias.length === 0) return [];
+
+        // Step 2: 并行获取每个视频的音频流 URL（限前10个避免过载）
+        var candidates = medias.slice(0, 10);
+        var results = [];
+        var promises = candidates.map(function (m) {
+            return fetchBilibiliVideoTracks(m.bvid)
+                .then(function (t) { if (t[0]) results.push(t[0]); })
+                .catch(function (e) { console.warn('Bilibili collection item failed for ' + m.bvid, e); });
+        });
+        await Promise.all(promises);
+        return results;
     }
 
     // ── Lyrics ───────────────────────────────────────────────
