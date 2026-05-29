@@ -256,31 +256,21 @@ const managerConfigStr = JSON.stringify({
     async function fetchBilibiliVideoTracks(bvid) {
         if (!bvid) return [];
 
-        // Step 1: 获取视频信息 → 得到 title / pic / cid
+        // Step 1: 获取视频信息 → 得到 title / pic
         var infoUrl = 'https://api.bilibili.com/x/web-interface/view?bvid=' + bvid;
         var infoRes = await fetch(infoUrl, { headers: bilibiliHeaders() });
         if (!infoRes.ok) throw new Error('Bilibili view API HTTP ' + infoRes.status);
         var infoData = await infoRes.json();
         if (infoData.code !== 0) throw new Error('Bilibili view API: ' + (infoData.message || 'unknown error'));
         var v = infoData.data;
-        var cid = v.cid;
 
-        // Step 2: 获取 DASH 音频流 URL
-        var playUrl = 'https://api.bilibili.com/x/player/playurl?bvid=' + bvid
-            + '&cid=' + cid + '&qn=0&fnval=16&fnver=0&fourk=1';
-        var playRes = await fetch(playUrl, { headers: bilibiliHeaders() });
-        if (!playRes.ok) throw new Error('Bilibili playurl API HTTP ' + playRes.status);
-        var playData = await playRes.json();
-        if (playData.code !== 0) throw new Error('Bilibili playurl API: ' + (playData.message || 'unknown error'));
-
-        var audioUrl = playData.data && playData.data.dash && playData.data.dash.audio
-            && playData.data.dash.audio[0] && playData.data.dash.audio[0].baseUrl;
-        if (!audioUrl) throw new Error('No DASH audio URL in Bilibili response');
+        // Step 2: 使用服务端代理端点获取音频流（绕过 Referer 检查）
+        var proxyUrl = '/api/bilibili-audio?bvid=' + bvid;
 
         return [{
             name: v.title || 'Unknown',
             artist: (v.owner && v.owner.name) || '',
-            url: audioUrl,
+            url: proxyUrl,
             pic: v.pic || '',
             lrc: ''
         }];
