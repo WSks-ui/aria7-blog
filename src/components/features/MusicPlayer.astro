@@ -65,7 +65,7 @@ const widgetId =
                 </h3>
             </div>
             <!-- Top Right: Lyric Toggle -->
-            <button class={`btn-lrc-toggle hover:text-(--primary) transition-all duration-300 p-0.5 pr-2 transform active:scale-95 text-neutral-400 shrink-0 ${!config.showLyrics ? 'hidden' : ''}`} title={i18n(I18nKey.musicLyrics)} aria-label={i18n(I18nKey.musicLyrics)}>
+            <button class={`btn-lrc-toggle hover:text-(--primary) transition-all duration-300 p-0.5 pr-2 transform active:scale-95 text-neutral-400 shrink-0 ${!config.showLyrics || config.mode === 'bilibili' ? 'hidden' : ''}`} title={i18n(I18nKey.musicLyrics)} aria-label={i18n(I18nKey.musicLyrics)}>
                 <Icon name="material-symbols:subtitles-off-outline-rounded" class="icon-lrc-off text-xl" aria-hidden="true" />
                 <Icon name="material-symbols:subtitles-outline-rounded" class="icon-lrc-on text-xl hidden" aria-hidden="true" />
             </button>
@@ -404,6 +404,20 @@ const widgetId =
             ui.currentSource.innerText = label + ' · ' + typeLabel + ' ' + s.config.bilibili.id;
         } else {
             ui.currentSource.innerText = label;
+        }
+
+        updateLyricsButtonVisibility(mode);
+    }
+
+    function updateLyricsButtonVisibility(mode) {
+        if (!ui.btnLrc) return;
+        if (mode === 'bilibili' || !cfg.showLyrics) {
+            ui.btnLrc.classList.add('hidden');
+            ui.lrcDrawer.style.gridTemplateRows = '0fr';
+            ui.lrcDrawer.classList.remove('opacity-100');
+            ui.lrcDrawer.classList.add('opacity-0');
+        } else {
+            ui.btnLrc.classList.remove('hidden');
         }
     }
 
