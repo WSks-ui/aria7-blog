@@ -40,6 +40,15 @@ export const en: Translation = {
 	[Key.musicCover]: "Cover",
 	[Key.musicNoCover]: "No cover available",
 	[Key.musicAudioPlayer]: "Audio Player",
+	[Key.musicSource]: "Source",
+	[Key.musicSourceVideo]: "Single Video",
+	[Key.musicSourcePlaylist]: "Collection",
+	[Key.musicSourceInputHint]: "Enter BV or Collection ID",
+	[Key.musicSourceApply]: "Apply",
+	[Key.musicSourceCurrent]: "Current: {id}",
+	[Key.musicModeMeting]: "Online (Meting)",
+	[Key.musicModeLocal]: "Local",
+	[Key.musicModeBilibili]: "Bilibili",
 
 	// Announcement
 	[Key.announcement]: "Announcement",

@@ -40,6 +40,15 @@ export const ru: Translation = {
 	[Key.musicCover]: "Обложка",
 	[Key.musicNoCover]: "Нет обложки",
 	[Key.musicAudioPlayer]: "Аудиоплеер",
+	[Key.musicSource]: "Источник",
+	[Key.musicSourceVideo]: "Одно видео",
+	[Key.musicSourcePlaylist]: "Сборник",
+	[Key.musicSourceInputHint]: "Введите BV или ID сборника",
+	[Key.musicSourceApply]: "Применить",
+	[Key.musicSourceCurrent]: "Текущий: {id}",
+	[Key.musicModeMeting]: "Онлайн (Meting)",
+	[Key.musicModeLocal]: "Локально",
+	[Key.musicModeBilibili]: "Bilibili",
 
 	// Объявление
 	[Key.announcement]: "Объявление",

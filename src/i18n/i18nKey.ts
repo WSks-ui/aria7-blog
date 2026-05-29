@@ -59,6 +59,15 @@ enum I18nKey {
 	musicCover = "musicCover",
 	musicNoCover = "musicNoCover",
 	musicAudioPlayer = "musicAudioPlayer",
+	musicSource = "musicSource",
+	musicSourceVideo = "musicSourceVideo",
+	musicSourcePlaylist = "musicSourcePlaylist",
+	musicSourceInputHint = "musicSourceInputHint",
+	musicSourceApply = "musicSourceApply",
+	musicSourceCurrent = "musicSourceCurrent",
+	musicModeMeting = "musicModeMeting",
+	musicModeLocal = "musicModeLocal",
+	musicModeBilibili = "musicModeBilibili",
 
 	themeColor = "themeColor",
 

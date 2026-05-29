@@ -31,6 +31,7 @@ const localPlaylist =
 const managerConfigStr = JSON.stringify({
 	mode: config.mode,
 	meting: config.meting,
+	bilibili: config.bilibili,
 	localPlaylist: localPlaylist,
 	volume: config.volume ?? 0.7,
 	playMode: config.playMode ?? "list",
@@ -165,6 +166,55 @@ const managerConfigStr = JSON.stringify({
             }
         }
         throw new Error('All Meting APIs failed');
+    }
+
+    // ── Bilibili fetch ───────────────────────────────────────
+    async function fetchBilibiliData() {
+        if (!config.bilibili) return;
+        var m = config.bilibili;
+        var apis = [m.api].concat(m.fallbackApis || []);
+
+        for (var i = 0; i < apis.length; i++) {
+            var baseApi = apis[i];
+            if (!baseApi) continue;
+            try {
+                var fetchUrl = baseApi
+                    .replace(':type', m.type || 'video')
+                    .replace(':id', m.id || '')
+                    .replace(':r', Math.random());
+                if (m.auth) fetchUrl += '&auth=' + encodeURIComponent(m.auth);
+
+                var res = await fetch(fetchUrl);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                var data = await res.json();
+
+                // Normalize: support both direct array and { data: [...] } wrappers
+                var items = null;
+                if (Array.isArray(data)) {
+                    items = data;
+                } else if (data.data && Array.isArray(data.data)) {
+                    items = data.data;
+                } else if (data.data && data.data.aid) {
+                    items = [data.data];
+                }
+
+                if (items && items.length > 0) {
+                    state.playlist = items.map(function (item) {
+                        return {
+                            name: item.title || item.name || 'Unknown',
+                            artist: item.author || item.artist || 'Unknown',
+                            url: item.url,
+                            pic: item.pic || item.cover || '',
+                            lrc: item.lrc || ''
+                        };
+                    });
+                    return;
+                }
+            } catch (e) {
+                console.warn('Bilibili API failed for ' + baseApi, e);
+            }
+        }
+        throw new Error('All Bilibili APIs failed');
     }
 
     // ── Lyrics ───────────────────────────────────────────────
@@ -306,6 +356,73 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
+    // ── Mode switching (user can change mode from UI) ────────
+    async function setMode(newMode) {
+        if (newMode === config.mode && newMode !== 'bilibili') return;
+
+        // Save to localStorage for persistence
+        try {
+            localStorage.setItem('music-player-mode', newMode);
+        } catch (e) {}
+
+        // Update config
+        config.mode = newMode;
+
+        // Reset and re-init
+        state.initialized = false;
+        state.initializing = false;
+        state.playlist = [];
+        state.currentIndex = 0;
+        state.lyrics = [];
+        state.currentLrcIndex = -1;
+
+        // Stop current playback
+        audio.pause();
+        audio.src = '';
+        state.isPlaying = false;
+
+        // Show loading
+        emit('fm:loading', { loading: true });
+
+        // Re-fetch with new mode
+        await init();
+    }
+
+    // ── Bilibili source switching (for user custom favorites) ─
+    async function setBilibiliSource(type, id) {
+        if (config.mode !== 'bilibili') return;
+
+        // Save to localStorage for persistence
+        try {
+            localStorage.setItem('music-bilibili-type', type);
+            localStorage.setItem('music-bilibili-id', id);
+        } catch (e) {}
+
+        // Update config
+        if (!config.bilibili) config.bilibili = {};
+        config.bilibili.type = type;
+        config.bilibili.id = id;
+
+        // Reset and re-init
+        state.initialized = false;
+        state.initializing = false;
+        state.playlist = [];
+        state.currentIndex = 0;
+        state.lyrics = [];
+        state.currentLrcIndex = -1;
+
+        // Stop current playback
+        audio.pause();
+        audio.src = '';
+        state.isPlaying = false;
+
+        // Show loading
+        emit('fm:loading', { loading: true });
+
+        // Re-fetch with new source
+        await init();
+    }
+
     // ── Audio events → broadcast ─────────────────────────────
     audio.addEventListener('timeupdate', function () {
         if (isNaN(audio.duration)) return;
@@ -350,10 +467,31 @@ const managerConfigStr = JSON.stringify({
         state.initializing = true;
 
         try {
+            // Check localStorage for user-saved mode preference
+            try {
+                var savedMode = localStorage.getItem('music-player-mode');
+                if (savedMode && (savedMode === 'meting' || savedMode === 'local' || savedMode === 'bilibili')) {
+                    config.mode = savedMode;
+                }
+            } catch (e) {}
+
             if (config.mode === 'meting' && config.meting) {
                 await fetchMetingData();
             } else if (config.mode === 'local') {
                 state.playlist = config.localPlaylist || [];
+            } else if (config.mode === 'bilibili' && config.bilibili) {
+                // Check localStorage for user-customized source (persisted across sessions)
+                var savedType = null;
+                var savedId = null;
+                try {
+                    savedType = localStorage.getItem('music-bilibili-type');
+                    savedId = localStorage.getItem('music-bilibili-id');
+                } catch (e) {}
+                if (savedType && savedId) {
+                    config.bilibili.type = savedType;
+                    config.bilibili.id = savedId;
+                }
+                await fetchBilibiliData();
             }
 
             if (state.playlist.length > 0) {
@@ -434,6 +572,8 @@ const managerConfigStr = JSON.stringify({
         seek: seek,
         seekToTime: seekToTime,
         playTrackByIndex: playTrackByIndex,
+        setBilibiliSource: setBilibiliSource,
+        setMode: setMode,
         loadTrack: loadTrack
     };
 })();

@@ -40,6 +40,15 @@ export const zh_CN: Translation = {
 	[Key.musicCover]: "封面",
 	[Key.musicNoCover]: "暂无封面",
 	[Key.musicAudioPlayer]: "音频播放器",
+	[Key.musicSource]: "音源",
+	[Key.musicSourceVideo]: "单个视频",
+	[Key.musicSourcePlaylist]: "收藏夹",
+	[Key.musicSourceInputHint]: "输入BV号或收藏夹ID",
+	[Key.musicSourceApply]: "应用",
+	[Key.musicSourceCurrent]: "当前：{id}",
+	[Key.musicModeMeting]: "在线音乐 (Meting)",
+	[Key.musicModeLocal]: "本地音乐",
+	[Key.musicModeBilibili]: "B站视频",
 
 	// 公告栏
 	[Key.announcement]: "公告",

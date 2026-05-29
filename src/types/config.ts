@@ -688,8 +688,8 @@ export type FriendsPageConfig = {
 
 // 音乐播放器配置
 export type MusicPlayerConfig = {
-	// 使用方式：'meting' 或 'local'
-	mode?: "meting" | "local"; // "meting" 使用 Meting API，"local" 使用本地音乐列表
+	// 使用方式：'meting' 使用 Meting API，'local' 使用本地音乐列表，'bilibili' 使用 B站视频音频
+	mode?: "meting" | "local" | "bilibili";
 
 	// 默认音量 (0-1)
 	volume?: number;
@@ -733,6 +733,29 @@ export type MusicPlayerConfig = {
 			cover?: string; // 封面图片路径（相对于 public 目录）
 			lrc?: string; // 歌词内容，支持 LRC 格式
 		}>;
+	};
+
+	// Bilibili 视频音频配置（当 mode 为 'bilibili' 时使用）
+	// B站拥有海量的音乐内容（翻唱、V家、OST、同人音乐等），且全部免费播放
+	bilibili?: {
+		// Bilibili 音频提取 API 地址
+		// 支持 :type 和 :id 占位符
+		api?: string;
+
+		// 类型：video=单个视频, playlist=收藏夹/合集
+		type?: "video" | "playlist";
+
+		// Bilibili 视频 BV 号或收藏夹 ID
+		// 视频示例："BV1GJ411m8Q7"
+		// 收藏夹示例："123456789"
+		id?: string;
+
+		// 认证 cookie（可选）
+		// 某些 API 需要传入 B 站的 Cookie 以获取高音质
+		auth?: string;
+
+		// 备用 API 配置（当主 API 失败时使用）
+		fallbackApis?: string[];
 	};
 };
 

@@ -40,6 +40,15 @@ export const ja: Translation = {
 	[Key.musicCover]: "カバー",
 	[Key.musicNoCover]: "カバーなし",
 	[Key.musicAudioPlayer]: "オーディオプレーヤー",
+	[Key.musicSource]: "音源",
+	[Key.musicSourceVideo]: "単一動画",
+	[Key.musicSourcePlaylist]: "コレクション",
+	[Key.musicSourceInputHint]: "BV番号またはコレクションIDを入力",
+	[Key.musicSourceApply]: "適用",
+	[Key.musicSourceCurrent]: "現在：{id}",
+	[Key.musicModeMeting]: "オンライン (Meting)",
+	[Key.musicModeLocal]: "ローカル",
+	[Key.musicModeBilibili]: "Bilibili",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",

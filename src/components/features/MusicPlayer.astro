@@ -15,6 +15,7 @@ const config = musicPlayerConfig;
 
 const viewConfigStr = JSON.stringify({
 	showLyrics: config.showLyrics ?? true,
+	mode: config.mode,
 	i18n: {
 		noPlaying: i18n(I18nKey.musicNoPlaying),
 		lyrics: i18n(I18nKey.musicLyrics),
@@ -27,6 +28,15 @@ const viewConfigStr = JSON.stringify({
 		pause: i18n(I18nKey.musicPause),
 		noCover: i18n(I18nKey.musicNoCover),
 		music: i18n(I18nKey.music),
+		source: i18n(I18nKey.musicSource),
+		sourceVideo: i18n(I18nKey.musicSourceVideo),
+		sourcePlaylist: i18n(I18nKey.musicSourcePlaylist),
+		sourceInputHint: i18n(I18nKey.musicSourceInputHint),
+		sourceApply: i18n(I18nKey.musicSourceApply),
+		sourceCurrent: i18n(I18nKey.musicSourceCurrent),
+		modeMeting: i18n(I18nKey.musicModeMeting),
+		modeLocal: i18n(I18nKey.musicModeLocal),
+		modeBilibili: i18n(I18nKey.musicModeBilibili),
 	},
 });
 
@@ -125,6 +135,11 @@ const widgetId =
         <Icon name="material-symbols:skip-next-rounded" class="text-3xl" aria-hidden="true" />
     </button>
 
+    <!-- Source (mode & source selector) -->
+    <button class="btn-source text-neutral-400 hover:text-(--primary) transition-all duration-300 p-2 transform active:scale-95" title={i18n(I18nKey.musicSource)} aria-label={i18n(I18nKey.musicSource)}>
+        <Icon name="material-symbols:library-music-outline-rounded" class="text-xl" aria-hidden="true" />
+    </button>
+
     <!-- Playlist Toggle Arrow -->
     <button class="btn-drawer-toggle text-neutral-400 hover:text-(--primary) transition-all duration-300 p-2 transform active:scale-95" title={i18n(I18nKey.musicPlaylist)} aria-label={i18n(I18nKey.musicPlaylist)}>
         <Icon name="mdi:playlist-music" class="text-xl" aria-hidden="true" />
@@ -148,6 +163,68 @@ const widgetId =
             <div class="mt-2 pt-2 border-t border-neutral-100 dark:border-white/5 mx-1">
             <div class="playlist-container max-h-48 overflow-y-auto custom-scrollbar pr-1 pb-1 flex flex-col gap-1" role="listbox" aria-label={i18n(I18nKey.musicPlaylist)}>
                 <!-- Items -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Source Drawer (mode selector + source config) -->
+<div class="source-drawer grid transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid-rows-[0fr] opacity-0">
+    <div class="overflow-hidden min-h-0">
+        <div class="mt-2 pt-2 border-t border-neutral-100 dark:border-white/5 mx-1">
+            <div class="px-1 pb-2 flex flex-col gap-3">
+                <!-- Current source indicator -->
+                <div class="current-source text-xs text-neutral-400 truncate"></div>
+
+                <!-- Mode selector -->
+                <div class="flex gap-1.5">
+                    <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
+                        <input type="radio" name={`music-mode-${widgetId}`} value="meting" class="hidden" />
+                        <Icon name="material-symbols:cloud-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        {i18n(I18nKey.musicModeMeting)}
+                    </label>
+                    <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
+                        <input type="radio" name={`music-mode-${widgetId}`} value="local" class="hidden" />
+                        <Icon name="material-symbols:folder-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        {i18n(I18nKey.musicModeLocal)}
+                    </label>
+                    <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
+                        <input type="radio" name={`music-mode-${widgetId}`} value="bilibili" class="hidden" />
+                        <Icon name="material-symbols:library-music-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        {i18n(I18nKey.musicModeBilibili)}
+                    </label>
+                </div>
+
+                <!-- Bilibili config section -->
+                <div class="source-bilibili-section flex flex-col gap-3">
+                    <div class="h-px bg-neutral-100 dark:bg-white/5"></div>
+
+                    <!-- Type selector -->
+                    <div class="flex gap-2">
+                        <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
+                            <input type="radio" name={`source-type-${widgetId}`} value="video" class="hidden" checked />
+                            <Icon name="material-symbols:video-library-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                            {i18n(I18nKey.musicSourceVideo)}
+                        </label>
+                        <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
+                            <input type="radio" name={`source-type-${widgetId}`} value="playlist" class="hidden" />
+                            <Icon name="material-symbols:playlist-play-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                            {i18n(I18nKey.musicSourcePlaylist)}
+                        </label>
+                    </div>
+
+                    <!-- Input field -->
+                    <div class="flex gap-2">
+                        <input type="text" class="source-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder={i18n(I18nKey.musicSourceInputHint)} />
+                        <button class="btn-source-apply px-3 py-1.5 text-xs font-medium rounded-lg bg-(--primary) text-white hover:brightness-110 transition-all active:scale-95 shrink-0" aria-label={i18n(I18nKey.musicSourceApply)}>
+                            {i18n(I18nKey.musicSourceApply)}
+                        </button>
+                    </div>
+
+                    <div class="text-[10px] text-neutral-400 leading-relaxed">
+                        {i18n(I18nKey.musicSourceInputHint)}
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -220,7 +297,16 @@ const widgetId =
         btnDrawer: widget.querySelector('.btn-drawer-toggle'),
         playlistDrawer: widget.querySelector('.playlist-drawer'),
         playlistContainer: widget.querySelector('.playlist-container'),
-        itemTemplate: document.getElementById('playlist-item-template-' + widgetId)
+        itemTemplate: document.getElementById('playlist-item-template-' + widgetId),
+        // Source drawer
+        btnSource: widget.querySelector('.btn-source'),
+        sourceDrawer: widget.querySelector('.source-drawer'),
+        sourceInput: widget.querySelector('.source-input'),
+        btnSourceApply: widget.querySelector('.btn-source-apply'),
+        sourceTypeRadios: widget.querySelectorAll('input[name="source-type-' + widgetId + '"]'),
+        modeRadios: widget.querySelectorAll('input[name="music-mode-' + widgetId + '"]'),
+        bilibiliSection: widget.querySelector('.source-bilibili-section'),
+        currentSource: widget.querySelector('.current-source')
     };
 
     // Verify critical elements
@@ -296,6 +382,28 @@ const widgetId =
         } else {
             ui.iconVolHigh.classList.remove('hidden');
             ui.iconVolMute.classList.add('hidden');
+        }
+    }
+
+    function updateCurrentSource() {
+        if (!ui.currentSource) return;
+        var s = mgr.getState();
+        if (!s || !s.config) {
+            ui.currentSource.innerText = '';
+            return;
+        }
+        var mode = s.config.mode || 'meting';
+        var modeLabels = {
+            meting: cfg.i18n.modeMeting,
+            local: cfg.i18n.modeLocal,
+            bilibili: cfg.i18n.modeBilibili
+        };
+        var label = modeLabels[mode] || mode;
+        if (mode === 'bilibili' && s.config.bilibili && s.config.bilibili.id) {
+            var typeLabel = s.config.bilibili.type === 'playlist' ? cfg.i18n.sourcePlaylist : cfg.i18n.sourceVideo;
+            ui.currentSource.innerText = label + ' · ' + typeLabel + ' ' + s.config.bilibili.id;
+        } else {
+            ui.currentSource.innerText = label;
         }
     }
 
@@ -472,6 +580,9 @@ const widgetId =
         }
         // Update cover animation state to match play state
         ui.cover.style.animationPlayState = s.isPlaying ? 'running' : 'paused';
+
+        // Update current source info
+        updateCurrentSource();
     }
 
     // ── Event listeners (fm:* from manager) ──────────────────
@@ -492,6 +603,7 @@ const widgetId =
         } else {
             ui.title.innerText = cfg.i18n.noSongs;
         }
+        updateCurrentSource();
     });
 
     on('fm:track', function (e) {
@@ -531,6 +643,10 @@ const widgetId =
 
     on('fm:error', function (e) {
         ui.title.innerText = e.detail.message || cfg.i18n.error;
+    });
+
+    on('fm:loading', function (e) {
+        setLoading(!!e.detail.loading);
     });
 
     // ── Button click delegates ───────────────────────────────
@@ -606,6 +722,102 @@ const widgetId =
             ui.btnDrawer.classList.add('text-(--primary)');
         }
     });
+
+    // ── Source drawer (mode & source selector) ───────────────
+    if (ui.btnSource) {
+        ui.btnSource.addEventListener('click', function () {
+            var isOpen = ui.sourceDrawer.style.gridTemplateRows === '1fr';
+            if (isOpen) {
+                closeSourceDrawer();
+            } else {
+                // Close other drawers
+                ui.lrcDrawer.style.gridTemplateRows = '0fr';
+                ui.lrcDrawer.classList.remove('opacity-100');
+                ui.lrcDrawer.classList.add('opacity-0');
+                ui.playlistDrawer.style.gridTemplateRows = '0fr';
+                ui.playlistDrawer.classList.remove('opacity-100');
+                ui.playlistDrawer.classList.add('opacity-0');
+                ui.btnLrc.classList.remove('text-(--primary)');
+                ui.btnLrc.classList.add('text-neutral-400');
+                ui.btnDrawer.classList.remove('text-(--primary)');
+                ui.btnDrawer.classList.add('text-neutral-400');
+
+                // Sync mode radio with current state
+                var s = mgr.getState();
+                var currentMode = (s && s.config && s.config.mode) || 'meting';
+                ui.modeRadios.forEach(function (r) {
+                    r.checked = r.value === currentMode;
+                });
+                updateBilibiliSectionVisibility(currentMode);
+
+                // Pre-fill bilibili input if applicable
+                if (currentMode === 'bilibili' && s && s.config && s.config.bilibili) {
+                    ui.sourceInput.value = s.config.bilibili.id || '';
+                    var type = s.config.bilibili.type || 'video';
+                    ui.sourceTypeRadios.forEach(function (r) {
+                        r.checked = r.value === type;
+                    });
+                }
+
+                ui.sourceDrawer.style.gridTemplateRows = '1fr';
+                ui.sourceDrawer.classList.add('opacity-100');
+                ui.sourceDrawer.classList.remove('opacity-0');
+                ui.btnSource.classList.remove('text-neutral-400');
+                ui.btnSource.classList.add('text-(--primary)');
+                if (currentMode === 'bilibili') {
+                    ui.sourceInput.focus();
+                }
+            }
+        });
+
+        function updateBilibiliSectionVisibility(mode) {
+            if (!ui.bilibiliSection) return;
+            if (mode === 'bilibili') {
+                ui.bilibiliSection.classList.remove('hidden');
+            } else {
+                ui.bilibiliSection.classList.add('hidden');
+            }
+        }
+
+        // Mode radio change → switch mode
+        ui.modeRadios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                if (!radio.checked) return;
+                var newMode = radio.value;
+                closeSourceDrawer();
+                mgr.setMode(newMode);
+            });
+        });
+
+        // Bilibili source apply
+        ui.btnSourceApply.addEventListener('click', function () {
+            var typeEl = null;
+            ui.sourceTypeRadios.forEach(function (r) {
+                if (r.checked) typeEl = r;
+            });
+            var type = typeEl ? typeEl.value : 'video';
+            var id = ui.sourceInput.value.trim();
+            if (!id) return;
+
+            closeSourceDrawer();
+            mgr.setBilibiliSource(type, id);
+        });
+
+        // Allow Enter key to submit
+        ui.sourceInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                ui.btnSourceApply.click();
+            }
+        });
+
+        function closeSourceDrawer() {
+            ui.sourceDrawer.style.gridTemplateRows = '0fr';
+            ui.sourceDrawer.classList.remove('opacity-100');
+            ui.sourceDrawer.classList.add('opacity-0');
+            ui.btnSource.classList.remove('text-(--primary)');
+            ui.btnSource.classList.add('text-neutral-400');
+        }
+    }
 
     // ── Lyrics user scroll detection ─────────────────────────
     function resetScrollTimeout() {
