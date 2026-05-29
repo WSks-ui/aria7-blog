@@ -49,6 +49,11 @@ export const en: Translation = {
 	[Key.musicModeMeting]: "Online (Meting)",
 	[Key.musicModeLocal]: "Local",
 	[Key.musicModeBilibili]: "Bilibili",
+	[Key.musicSavedSources]: "Saved",
+	[Key.musicSave]: "Save",
+	[Key.musicRemoveSource]: "Remove",
+	[Key.musicNoSavedSources]:
+		"No saved sources yet. Enter a BV ID and click Save.",
 
 	// Announcement
 	[Key.announcement]: "Announcement",

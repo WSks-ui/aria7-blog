@@ -49,6 +49,11 @@ export const ru: Translation = {
 	[Key.musicModeMeting]: "Онлайн (Meting)",
 	[Key.musicModeLocal]: "Локально",
 	[Key.musicModeBilibili]: "Bilibili",
+	[Key.musicSavedSources]: "Сохранённые",
+	[Key.musicSave]: "Сохранить",
+	[Key.musicRemoveSource]: "Удалить",
+	[Key.musicNoSavedSources]:
+		"Нет сохранённых. Введите BV ID и нажмите Сохранить.",
 
 	// Объявление
 	[Key.announcement]: "Объявление",

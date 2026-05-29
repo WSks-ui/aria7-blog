@@ -68,6 +68,10 @@ enum I18nKey {
 	musicModeMeting = "musicModeMeting",
 	musicModeLocal = "musicModeLocal",
 	musicModeBilibili = "musicModeBilibili",
+	musicSavedSources = "musicSavedSources",
+	musicSave = "musicSave",
+	musicRemoveSource = "musicRemoveSource",
+	musicNoSavedSources = "musicNoSavedSources",
 
 	themeColor = "themeColor",
 

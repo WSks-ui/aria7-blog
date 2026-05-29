@@ -49,6 +49,11 @@ export const ja: Translation = {
 	[Key.musicModeMeting]: "オンライン (Meting)",
 	[Key.musicModeLocal]: "ローカル",
 	[Key.musicModeBilibili]: "Bilibili",
+	[Key.musicSavedSources]: "保存済み",
+	[Key.musicSave]: "保存",
+	[Key.musicRemoveSource]: "削除",
+	[Key.musicNoSavedSources]:
+		"まだ保存されていません。BV番号を入力して保存してください。",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",

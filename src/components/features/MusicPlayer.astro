@@ -37,6 +37,10 @@ const viewConfigStr = JSON.stringify({
 		modeMeting: i18n(I18nKey.musicModeMeting),
 		modeLocal: i18n(I18nKey.musicModeLocal),
 		modeBilibili: i18n(I18nKey.musicModeBilibili),
+		savedSources: i18n(I18nKey.musicSavedSources),
+		save: i18n(I18nKey.musicSave),
+		removeSource: i18n(I18nKey.musicRemoveSource),
+		noSavedSources: i18n(I18nKey.musicNoSavedSources),
 	},
 });
 
@@ -221,8 +225,22 @@ const widgetId =
                         </button>
                     </div>
 
-                    <div class="text-[10px] text-neutral-400 leading-relaxed">
-                        {i18n(I18nKey.musicSourceInputHint)}
+                    <div class="flex justify-end">
+                        <button class="btn-source-save text-xs font-medium text-(--primary) hover:underline transition-all active:scale-95">
+                            {i18n(I18nKey.musicSave)}
+                        </button>
+                    </div>
+
+                    <div class="h-px bg-neutral-100 dark:bg-white/5"></div>
+
+                    <div class="text-xs font-medium text-neutral-500">
+                        {i18n(I18nKey.musicSavedSources)}
+                    </div>
+
+                    <div class="saved-sources-list flex flex-col gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
+                        <div class="saved-sources-empty text-[10px] text-neutral-400 leading-relaxed">
+                            {i18n(I18nKey.musicNoSavedSources)}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -306,6 +324,9 @@ const widgetId =
         sourceTypeRadios: widget.querySelectorAll('input[name="source-type-' + widgetId + '"]'),
         modeRadios: widget.querySelectorAll('input[name="music-mode-' + widgetId + '"]'),
         bilibiliSection: widget.querySelector('.source-bilibili-section'),
+        btnSourceSave: widget.querySelector('.btn-source-save'),
+        savedSourcesList: widget.querySelector('.saved-sources-list'),
+        savedSourcesEmpty: widget.querySelector('.saved-sources-empty'),
         currentSource: widget.querySelector('.current-source')
     };
 
@@ -764,6 +785,9 @@ const widgetId =
                 });
                 updateBilibiliSectionVisibility(currentMode);
 
+                // Load saved sources list
+                mgr.broadcastSavedSources();
+
                 // Pre-fill bilibili input if applicable
                 if (currentMode === 'bilibili' && s && s.config && s.config.bilibili) {
                     ui.sourceInput.value = s.config.bilibili.id || '';
@@ -817,11 +841,108 @@ const widgetId =
             mgr.setBilibiliSource(type, id);
         });
 
+        // Bilibili source save
+        if (ui.btnSourceSave) {
+            ui.btnSourceSave.addEventListener('click', function () {
+                var typeEl = null;
+                ui.sourceTypeRadios.forEach(function (r) {
+                    if (r.checked) typeEl = r;
+                });
+                var type = typeEl ? typeEl.value : 'video';
+                var id = ui.sourceInput.value.trim();
+                if (!id) return;
+
+                ui.btnSourceSave.textContent = '...';
+                ui.btnSourceSave.style.pointerEvents = 'none';
+
+                fetch('/api/bilibili-audio?bvid=' + id + '&meta=1')
+                    .then(function (r) { return r.json(); })
+                    .then(function (meta) {
+                        if (meta.error) throw new Error(meta.error);
+                        mgr.addSavedSource(type, id, meta.title || id, meta.artist || '', meta.pic || '');
+                        ui.sourceInput.value = '';
+                    })
+                    .catch(function (e) {
+                        console.warn('Failed to save source:', e);
+                    })
+                    .finally(function () {
+                        ui.btnSourceSave.textContent = cfg.i18n.save;
+                        ui.btnSourceSave.style.pointerEvents = '';
+                    });
+            });
+        }
+
+        // Render saved sources list
+        function renderSavedSources() {
+            if (!ui.savedSourcesList || !ui.savedSourcesEmpty) return;
+
+            var sources = mgr.getSavedSources();
+            if (sources.length === 0) {
+                ui.savedSourcesEmpty.classList.remove('hidden');
+                // Remove existing items
+                var existing = ui.savedSourcesList.querySelectorAll('.saved-source-item');
+                existing.forEach(function (el) { el.remove(); });
+                return;
+            }
+
+            ui.savedSourcesEmpty.classList.add('hidden');
+
+            // Rebuild list
+            var existingItems = ui.savedSourcesList.querySelectorAll('.saved-source-item');
+            existingItems.forEach(function (el) { el.remove(); });
+
+            sources.forEach(function (src) {
+                var item = document.createElement('div');
+                item.className = 'saved-source-item flex items-center gap-2 p-1.5 rounded-md cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
+                item.title = src.title + (src.artist ? ' - ' + src.artist : '');
+
+                var info = document.createElement('div');
+                info.className = 'flex-1 min-w-0';
+
+                var titleEl = document.createElement('div');
+                titleEl.className = 'text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate';
+                titleEl.textContent = src.title || src.id;
+
+                var subEl = document.createElement('div');
+                subEl.className = 'text-[10px] text-neutral-400 truncate';
+                subEl.textContent = (src.artist || '') + ' · ' + (src.type === 'playlist' ? cfg.i18n.sourcePlaylist : cfg.i18n.sourceVideo) + ' ' + src.id;
+
+                info.appendChild(titleEl);
+                info.appendChild(subEl);
+
+                // Delete button
+                var delBtn = document.createElement('button');
+                delBtn.className = 'text-neutral-400 hover:text-red-500 transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
+                delBtn.setAttribute('aria-label', cfg.i18n.removeSource);
+                delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"/></svg>';
+
+                delBtn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    mgr.removeSavedSource(src.type, src.id);
+                });
+
+                // Click to play
+                item.appendChild(info);
+                item.appendChild(delBtn);
+                item.addEventListener('click', function () {
+                    closeSourceDrawer();
+                    mgr.setBilibiliSource(src.type, src.id);
+                });
+
+                ui.savedSourcesList.appendChild(item);
+            });
+        }
+
         // Allow Enter key to submit
         ui.sourceInput.addEventListener('keydown', function (e) {
             if (e.key === 'Enter') {
                 ui.btnSourceApply.click();
             }
+        });
+
+        // Listen for saved sources updates
+        on('fm:saved-sources', function () {
+            renderSavedSources();
         });
 
         function closeSourceDrawer() {

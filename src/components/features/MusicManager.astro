@@ -476,6 +476,67 @@ const managerConfigStr = JSON.stringify({
         await init();
     }
 
+    // ── Saved sources (user's custom Bilibili list) ─────────
+    var SAVED_KEY = 'music-saved-sources';
+
+    function getSavedSources() {
+        try {
+            var raw = localStorage.getItem(SAVED_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function addSavedSource(type, id, title, artist, pic) {
+        var list = getSavedSources();
+        var found = false;
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id === id && list[i].type === type) {
+                list[i].title = title;
+                list[i].artist = artist;
+                list[i].pic = pic;
+                list[i].savedAt = Date.now();
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            list.unshift({
+                id: id,
+                type: type,
+                title: title,
+                artist: artist,
+                pic: pic || '',
+                savedAt: Date.now()
+            });
+        }
+        try {
+            localStorage.setItem(SAVED_KEY, JSON.stringify(list));
+        } catch (e) {}
+        emit('fm:saved-sources', { sources: list });
+        return list;
+    }
+
+    function removeSavedSource(type, id) {
+        var list = getSavedSources();
+        var filtered = [];
+        for (var i = 0; i < list.length; i++) {
+            if (list[i].id !== id || list[i].type !== type) {
+                filtered.push(list[i]);
+            }
+        }
+        try {
+            localStorage.setItem(SAVED_KEY, JSON.stringify(filtered));
+        } catch (e) {}
+        emit('fm:saved-sources', { sources: filtered });
+        return filtered;
+    }
+
+    function broadcastSavedSources() {
+        emit('fm:saved-sources', { sources: getSavedSources() });
+    }
+
     // ── Audio events → broadcast ─────────────────────────────
     audio.addEventListener('timeupdate', function () {
         if (isNaN(audio.duration)) return;
@@ -627,6 +688,10 @@ const managerConfigStr = JSON.stringify({
         playTrackByIndex: playTrackByIndex,
         setBilibiliSource: setBilibiliSource,
         setMode: setMode,
+        getSavedSources: getSavedSources,
+        addSavedSource: addSavedSource,
+        removeSavedSource: removeSavedSource,
+        broadcastSavedSources: broadcastSavedSources,
         loadTrack: loadTrack
     };
 })();
