@@ -137,7 +137,7 @@ const widgetId =
 
     <!-- Source (mode & source selector) -->
     <button class="btn-source text-neutral-400 hover:text-(--primary) transition-all duration-300 p-2 transform active:scale-95" title={i18n(I18nKey.musicSource)} aria-label={i18n(I18nKey.musicSource)}>
-        <Icon name="material-symbols:library-music-outline-rounded" class="text-xl" aria-hidden="true" />
+        <Icon name="material-symbols:library-music-outline" class="text-xl" aria-hidden="true" />
     </button>
 
     <!-- Playlist Toggle Arrow -->
@@ -180,17 +180,17 @@ const widgetId =
                 <div class="flex gap-1.5">
                     <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
                         <input type="radio" name={`music-mode-${widgetId}`} value="meting" class="hidden" />
-                        <Icon name="material-symbols:cloud-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        <Icon name="material-symbols:cloud-outline" class="text-sm shrink-0" aria-hidden="true" />
                         {i18n(I18nKey.musicModeMeting)}
                     </label>
                     <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
                         <input type="radio" name={`music-mode-${widgetId}`} value="local" class="hidden" />
-                        <Icon name="material-symbols:folder-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        <Icon name="material-symbols:folder-open-rounded" class="text-sm shrink-0" aria-hidden="true" />
                         {i18n(I18nKey.musicModeLocal)}
                     </label>
                     <label class="mode-label flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
                         <input type="radio" name={`music-mode-${widgetId}`} value="bilibili" class="hidden" />
-                        <Icon name="material-symbols:library-music-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                        <Icon name="material-symbols:library-music-outline" class="text-sm shrink-0" aria-hidden="true" />
                         {i18n(I18nKey.musicModeBilibili)}
                     </label>
                 </div>
@@ -203,7 +203,7 @@ const widgetId =
                     <div class="flex gap-2">
                         <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
                             <input type="radio" name={`source-type-${widgetId}`} value="video" class="hidden" checked />
-                            <Icon name="material-symbols:video-library-outline-rounded" class="text-sm shrink-0" aria-hidden="true" />
+                            <Icon name="material-symbols:video-library-rounded" class="text-sm shrink-0" aria-hidden="true" />
                             {i18n(I18nKey.musicSourceVideo)}
                         </label>
                         <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
