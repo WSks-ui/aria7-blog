@@ -13,6 +13,7 @@ fs.mkdirSync(destDir, { recursive: true });
 
 const files = fs.readdirSync(srcDir);
 files.forEach((file) => {
+	if (!file.endsWith(".js")) return;
 	const src = path.join(srcDir, file);
 	const dest = path.join(destDir, file);
 	fs.copyFileSync(src, dest);
