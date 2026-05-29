@@ -2,6 +2,7 @@ export default async function handler(req, res) {
 	try {
 		const parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 		const mediaId = parsedUrl.searchParams.get("media_id");
+		const mid = parseInt(parsedUrl.searchParams.get("mid")) || 0;
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
 
 		if (!mediaId) {
@@ -25,165 +26,132 @@ export default async function handler(req, res) {
 			return (url || "").replace(/^http:/, "https:");
 		}
 
+		function toTrackList(arr) {
+			return (arr || []).slice(0, 10).map(function (m) {
+				return {
+					bvid: m.bvid,
+					title: m.title || "Unknown",
+					artist: (m.upper && m.upper.name) || "",
+					pic: cleanPic(m.cover || m.pic || ""),
+					audio_url: "/api/bilibili-audio?bvid=" + m.bvid,
+				};
+			});
+		}
+
 		var title = "";
 		var cover = "";
 		var count = 0;
-		var medias = [];
+		var foundMid = mid;
+		var medias = null;
 
-		// ── Try 1: Series/Collection API (works without auth) ──
-		function tryFetchSeries(mid) {
-			return fetch(
-				`https://api.bilibili.com/x/series/archives?mid=${mid}&series_id=${mediaId}&pn=1&ps=20`,
-				{ headers: apiHeaders },
-			).then(function (r) {
-				if (!r.ok) return null;
-				return r.json();
-			}).then(function (d) {
-				if (!d || d.code !== 0 || !d.data) return null;
-				var meta = d.data.meta || {};
-				title = meta.name || title;
-				count = meta.total || 0;
-				return (d.data.archives || []).map(function (a) {
-					return {
-						bvid: a.bvid,
-						title: a.title,
-						upper: { name: (a.owner && a.owner.name) || "" },
-						cover: cleanPic(a.pic || a.cover),
-					};
-				});
-			});
-		}
-
-		// ── Try 2: Polymer space seasons API ───────────────────
-		function tryFetchSeasons(mid) {
-			return fetch(
-				`https://api.bilibili.com/x/polymer/space/seasons_archives_list?mid=${mid}&season_id=${mediaId}&page_num=1&page_size=20`,
-				{ headers: apiHeaders },
-			).then(function (r) {
-				if (!r.ok) return null;
-				return r.json();
-			}).then(function (d) {
-				if (!d || d.code !== 0 || !d.data) return null;
-				var meta = d.data.meta || {};
-				title = meta.name || title;
-				count = meta.total || 0;
-				cover = cleanPic(meta.cover || cover);
-				return (d.data.archives || []).map(function (a) {
-					return {
-						bvid: a.bvid,
-						title: a.title,
-						upper: { name: (a.owner && a.owner.name) || "" },
-						cover: cleanPic(a.pic || a.cover),
-					};
-				});
-			});
-		}
-
-		// ── Try 3: Fav folder info + list (may need auth) ──────
-		async function tryFetchFav() {
-			try {
-				var iRes = await fetch(
-					`https://api.bilibili.com/x/v3/fav/folder/info?media_id=${mediaId}`,
-					{ headers: apiHeaders },
-				);
-				if (!iRes.ok) return null;
-				var iData = await iRes.json();
-				if (iData.code !== 0) return null;
-				var info = iData.data || {};
-				title = info.title || title;
-				count = info.media_count || count;
-				cover = cleanPic(info.cover || cover);
-
-				var lRes = await fetch(
-					`https://api.bilibili.com/x/v3/fav/resource/list?media_id=${mediaId}&pn=1&ps=20&platform=web`,
-					{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
-				);
-				if (!lRes.ok) return null;
-				var lData = await lRes.json();
-				if (lData.code !== 0) return null;
-				return (lData.data && lData.data.medias || []).map(function (m) {
-					return {
-						bvid: m.bvid,
-						title: m.title,
-						upper: { name: (m.upper && m.upper.name) || "" },
-						cover: cleanPic(m.cover),
-					};
-				});
-			} catch (e) {
-				return null;
-			}
-		}
-
-		// ── Try all sources in order ───────────────────────────
-		var results;
-
-		// Need user mid for series/seasons APIs — use fav folder info as source
-		var foundMid = 0;
+		// ── Step 1: Metadata via fav/folder/info ────────────────
 		try {
-			var midInfo = await fetch(
-				`https://api.bilibili.com/x/v3/fav/folder/info?media_id=${mediaId}`,
+			var mi = await fetch(
+				"https://api.bilibili.com/x/v3/fav/folder/info?media_id=" + mediaId,
 				{ headers: apiHeaders },
 			);
-			if (midInfo.ok) {
-				var midData = await midInfo.json();
-				if (midData.code === 0 && midData.data) {
-					title = midData.data.title || title;
-					count = midData.data.media_count || count;
-					cover = cleanPic(midData.data.cover || cover);
-					foundMid = midData.data.mid || 0;
+			if (mi.ok) {
+				var midata = await mi.json();
+				if (midata.code === 0 && midata.data) {
+					title = midata.data.title || title;
+					count = midata.data.media_count || count;
+					cover = cleanPic(midata.data.cover || cover);
+					foundMid = foundMid || (midata.data.mid || 0);
 				}
 			}
-		} catch (e) {
-			/* silent */
-		}
+		} catch (e) { /* ok */ }
 
-		if (foundMid) {
-			results = await tryFetchSeasons(foundMid);
-			if (!results || results.length === 0) {
-				results = await tryFetchSeries(foundMid);
+		// ── Step 2: Get video list ──────────────────────────────
+		// 2a: fav/resource/list (public collections sometimes work)
+		try {
+			var fl = await fetch(
+				"https://api.bilibili.com/x/v3/fav/resource/list?media_id=" + mediaId +
+				"&pn=1&ps=20&platform=web",
+				{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
+			);
+			if (fl.ok) {
+				var fldata = await fl.json();
+				if (fldata.code === 0) {
+					medias = fldata.data && fldata.data.medias;
+				}
 			}
+		} catch (e) { /* ok */ }
+
+		// 2b: seasons API (needs mid, works for public collections)
+		if (!medias && foundMid) {
+			try {
+				var sl = await fetch(
+					"https://api.bilibili.com/x/polymer/space/seasons_archives_list?mid=" +
+					foundMid + "&season_id=" + mediaId + "&page_num=1&page_size=20",
+					{ headers: apiHeaders },
+				);
+				if (sl.ok) {
+					var sldata = await sl.json();
+					if (sldata.code === 0 && sldata.data) {
+						var smeta = sldata.data.meta || {};
+						title = smeta.name || title;
+						count = smeta.total || count;
+						cover = cleanPic(smeta.cover || cover);
+						var archives = sldata.data.archives || [];
+						medias = archives.map(function (a) {
+							return { bvid: a.bvid, title: a.title, upper: a.owner, cover: a.pic || a.cover };
+						});
+					}
+				}
+			} catch (e) { /* ok */ }
 		}
 
-		if ((!results || results.length === 0) && foundMid) {
-			results = await tryFetchFav();
+		// 2c: series API (needs mid)
+		if (!medias && foundMid) {
+			try {
+				var sr = await fetch(
+					"https://api.bilibili.com/x/series/archives?mid=" +
+					foundMid + "&series_id=" + mediaId + "&pn=1&ps=20",
+					{ headers: apiHeaders },
+				);
+				if (sr.ok) {
+					var srdata = await sr.json();
+					if (srdata.code === 0 && srdata.data) {
+						var srmeta = srdata.data.meta || {};
+						title = srmeta.name || title;
+						count = srmeta.total || count;
+						var archives = srdata.data.archives || [];
+						medias = archives.map(function (a) {
+							return { bvid: a.bvid, title: a.title, upper: a.owner, cover: a.pic || a.cover };
+						});
+					}
+				}
+			} catch (e) { /* ok */ }
 		}
 
-		medias = results || [];
-
-		if (medias.length === 0) {
-			return respond(res, 502, {
-				error:
-					"This collection may require authentication (private folder) or is empty. Try setting the playlist to public in Bilibili settings.",
-			});
+		if (!medias || medias.length === 0) {
+			var msg =
+				"Cannot fetch collection contents. " +
+				(foundMid
+					? "The collection may be private. Set it to public in Bilibili settings."
+					: "Please also provide the Bilibili user ID (mid) from the URL. "
+					+ "e.g. space.bilibili.com/450438868 → mid=450438868"
+				);
+			return respond(res, 502, { error: msg });
 		}
 
 		if (!title) title = "Collection " + mediaId;
 
 		if (metaOnly) {
-			var tracks = medias.slice(0, 10).map(function (m) {
-				return {
-					bvid: m.bvid,
-					title: m.title || "Unknown",
-					artist: (m.upper && m.upper.name) || "",
-					pic: cleanPic(m.cover || ""),
-					audio_url: "/api/bilibili-audio?bvid=" + m.bvid,
-				};
-			});
 			return respond(res, 200, {
 				title: title,
 				cover: cover,
 				count: count,
-				tracks: tracks,
+				tracks: toTrackList(medias),
 			});
 		}
 
-		// Full mode: playlist for player
 		var playlist = medias.slice(0, 10).map(function (m) {
 			return {
 				name: m.title || "Unknown",
 				artist: (m.upper && m.upper.name) || "",
 				url: "/api/bilibili-audio?bvid=" + m.bvid,
-				pic: cleanPic(m.cover || ""),
+				pic: cleanPic(m.cover || m.pic || ""),
 				lrc: "",
 			};
 		});

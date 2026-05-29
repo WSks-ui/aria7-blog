@@ -226,6 +226,10 @@ const widgetId =
                         </button>
                     </div>
 
+                    <div class="source-mid-row hidden flex gap-2">
+                        <input type="text" class="source-mid-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder="用户 UID（可选，URL 中 space.bilibili.com/ 后的数字）" />
+                    </div>
+
                     <div class="flex justify-end">
                         <button class="btn-source-save text-xs font-medium text-(--primary) hover:underline transition-all active:scale-95">
                             {i18n(I18nKey.musicSave)}
@@ -328,6 +332,8 @@ const widgetId =
         btnSourceSave: widget.querySelector('.btn-source-save'),
         savedSourcesList: widget.querySelector('.saved-sources-list'),
         savedSourcesEmpty: widget.querySelector('.saved-sources-empty'),
+        sourceMidRow: widget.querySelector('.source-mid-row'),
+        sourceMidInput: widget.querySelector('.source-mid-input'),
         currentSource: widget.querySelector('.current-source')
     };
 
@@ -799,6 +805,12 @@ const widgetId =
                     ui.sourceTypeRadios.forEach(function (r) {
                         r.checked = r.value === type;
                     });
+                    // Pre-fill mid from localStorage
+                    if (ui.sourceMidInput) {
+                        var savedMid = null;
+                        try { savedMid = localStorage.getItem('music-bilibili-mid'); } catch (e) {}
+                        ui.sourceMidInput.value = savedMid || '';
+                    }
                 }
 
                 ui.sourceDrawer.style.gridTemplateRows = '1fr';
@@ -827,9 +839,13 @@ const widgetId =
             ui.sourceTypeRadios.forEach(function (r) {
                 if (r.checked) typeEl = r;
             });
-            ui.sourceInput.placeholder = (typeEl && typeEl.value === 'playlist')
+            var isPlaylist = typeEl && typeEl.value === 'playlist';
+            ui.sourceInput.placeholder = isPlaylist
                 ? cfg.i18n.sourceInputHintPlaylist
                 : cfg.i18n.sourceInputHint;
+            if (ui.sourceMidRow) {
+                ui.sourceMidRow.classList.toggle('hidden', !isPlaylist);
+            }
         }
 
         // Source-type radio change → update placeholder
@@ -859,6 +875,11 @@ const widgetId =
             var id = ui.sourceInput.value.trim();
             if (!id) return;
 
+            // Save mid to localStorage for future use
+            if (type === 'playlist' && ui.sourceMidInput && ui.sourceMidInput.value.trim()) {
+                try { localStorage.setItem('music-bilibili-mid', ui.sourceMidInput.value.trim()); } catch (e) {}
+            }
+
             closeSourceDrawer();
             mgr.setBilibiliSource(type, id);
         });
@@ -880,6 +901,11 @@ const widgetId =
                 var apiUrl = type === 'video'
                     ? '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1'
                     : '/api/bilibili-collection?media_id=' + encodeURIComponent(id) + '&meta=1';
+                var midVal = ui.sourceMidInput ? ui.sourceMidInput.value.trim() : '';
+                if (type === 'playlist' && midVal) {
+                    apiUrl += '&mid=' + encodeURIComponent(midVal);
+                    try { localStorage.setItem('music-bilibili-mid', midVal); } catch (e) {}
+                }
 
                 fetch(apiUrl)
                     .then(function (r) { return r.json(); })
@@ -893,6 +919,7 @@ const widgetId =
                     })
                     .catch(function (e) {
                         console.warn('Failed to save source:', e);
+                        alert('Failed to save: ' + (e.message || 'Unknown error'));
                     })
                     .finally(function () {
                         ui.btnSourceSave.textContent = cfg.i18n.save;
