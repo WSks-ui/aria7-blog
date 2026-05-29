@@ -1,98 +1,123 @@
 export default async function handler(req, res) {
-	const url = new URL(req.url, `https://${req.headers.host}`);
-	const bvid = url.searchParams.get("bvid");
-	const metaOnly = url.searchParams.get("meta") === "1";
-
-	if (!bvid) {
-		res.writeHead(400, { "Content-Type": "application/json" });
-		res.end(JSON.stringify({ error: "Missing bvid parameter" }));
-		return;
-	}
-
 	try {
-		const headers = {
-			"User-Agent": req.headers["user-agent"] || "Mozilla/5.0",
+		const parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
+		const bvid = parsedUrl.searchParams.get("bvid");
+		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
+
+		if (!bvid) {
+			res.statusCode = 400;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: "Missing bvid parameter" }));
+			return;
+		}
+
+		const apiHeaders = {
+			"User-Agent":
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			Referer: "https://www.bilibili.com",
 		};
 
 		const viewRes = await fetch(
 			`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`,
-			{ headers },
+			{ headers: apiHeaders },
 		);
+
 		if (!viewRes.ok) {
-			res.writeHead(502);
-			res.end("Bilibili view API unavailable");
+			const text = await viewRes.text();
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: `view API ${viewRes.status}: ${text.slice(0, 100)}` }));
 			return;
 		}
+
 		const viewData = await viewRes.json();
 		if (viewData.code !== 0) {
-			res.writeHead(502, { "Content-Type": "application/json" });
-			res.end(
-				JSON.stringify({ error: viewData.message || "Video not found" }),
-			);
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: viewData.message || "Video not found" }));
 			return;
 		}
+
 		const v = viewData.data;
 		const cid = v.cid;
 
 		if (metaOnly) {
-			const info = {
-				title: v.title,
-				artist: v.owner ? v.owner.name : "",
-				pic: v.pic || "",
-				audio_url: `/api/bilibili-audio?bvid=${bvid}`,
-			};
-			res.writeHead(200, {
-				"Content-Type": "application/json",
-				"Access-Control-Allow-Origin": "*",
-			});
-			res.end(JSON.stringify(info));
+			res.statusCode = 200;
+			res.setHeader("Content-Type", "application/json");
+			res.setHeader("Access-Control-Allow-Origin", "*");
+			res.end(
+				JSON.stringify({
+					title: v.title || "Unknown",
+					artist: v.owner?.name || "",
+					pic: v.pic || "",
+					audio_url: `/api/bilibili-audio?bvid=${bvid}`,
+				}),
+			);
 			return;
 		}
 
 		const playRes = await fetch(
 			`https://api.bilibili.com/x/player/playurl?bvid=${bvid}&cid=${cid}&qn=0&fnval=16&fnver=0&fourk=1`,
-			{ headers },
+			{ headers: apiHeaders },
 		);
+
 		if (!playRes.ok) {
-			res.writeHead(502);
-			res.end("Bilibili playurl API unavailable");
+			const text = await playRes.text();
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: `playurl API ${playRes.status}: ${text.slice(0, 100)}` }));
 			return;
 		}
+
 		const playData = await playRes.json();
-		if (playData.code !== 0 || !playData.data?.dash?.audio?.[0]?.baseUrl) {
-			res.writeHead(502, { "Content-Type": "application/json" });
-			res.end(
-				JSON.stringify({
-					error: playData.message || "No audio stream available",
-				}),
-			);
+		const audio = playData.data?.dash?.audio?.[0];
+		if (!audio?.baseUrl) {
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: "No audio stream available" }));
 			return;
 		}
-		const audioUrl = playData.data.dash.audio[0].baseUrl;
 
-		const audioRes = await fetch(audioUrl, { headers });
+		const audioRes = await fetch(audio.baseUrl, { headers: apiHeaders });
+
 		if (!audioRes.ok) {
-			res.writeHead(502);
-			res.end("Unable to fetch audio from CDN");
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+			res.end(JSON.stringify({ error: `audio CDN ${audioRes.status}` }));
 			return;
 		}
 
-		res.writeHead(200, {
-			"Content-Type": audioRes.headers.get("Content-Type") || "audio/mp4",
-			"Cache-Control": "public, max-age=86400",
-			"Access-Control-Allow-Origin": "*",
-		});
+		res.statusCode = 200;
+		res.setHeader("Content-Type", audioRes.headers.get("Content-Type") || "audio/mp4");
+		res.setHeader("Cache-Control", "public, max-age=86400");
+		res.setHeader("Access-Control-Allow-Origin", "*");
 
-		const reader = audioRes.body.getReader();
-		while (true) {
-			const { done, value } = await reader.read();
-			if (done) break;
-			res.write(value);
+		if (audioRes.body && typeof audioRes.body.pipe === "function") {
+			audioRes.body.pipe(res);
+		} else if (audioRes.body && audioRes.body.getReader) {
+			const reader = audioRes.body.getReader();
+			const pump = async () => {
+				while (true) {
+					const { done, value } = await reader.read();
+					if (done) {
+						res.end();
+						break;
+					}
+					res.write(value);
+				}
+			};
+			pump().catch(() => {
+				if (!res.writableEnded) res.end();
+			});
+		} else {
+			const buffer = await audioRes.arrayBuffer();
+			res.end(Buffer.from(buffer));
 		}
-		res.end();
 	} catch (err) {
-		res.writeHead(502, { "Content-Type": "application/json" });
-		res.end(JSON.stringify({ error: err.message }));
+		if (!res.headersSent) {
+			res.statusCode = 502;
+			res.setHeader("Content-Type", "application/json");
+		}
+		res.end(JSON.stringify({ error: err.message || String(err) }));
 	}
 }

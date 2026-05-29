@@ -3,6 +3,12 @@
   "outputDirectory": "dist",
   "installCommand": "pnpm install",
   "framework": "astro",
+  "functions": {
+    "api/bilibili-audio.js": {
+      "memory": 512,
+      "maxDuration": 30
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
