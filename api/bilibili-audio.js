@@ -3,7 +3,7 @@ export default async function handler(req, res) {
 		const parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 		const bvid = parsedUrl.searchParams.get("bvid");
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
-		const sessdata = parsedUrl.searchParams.get("sessdata") || "";
+		const sessdata = process.env.BILIBILI_SESSDATA || parsedUrl.searchParams.get("sessdata") || "";
 
 		if (!bvid) {
 			res.statusCode = 400;

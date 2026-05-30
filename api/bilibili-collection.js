@@ -4,7 +4,7 @@ export default async function handler(req, res) {
 		const mediaId = parsedUrl.searchParams.get("media_id");
 		const userMid = parseInt(parsedUrl.searchParams.get("mid")) || 0;
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
-		const sessdata = parsedUrl.searchParams.get("sessdata") || "";
+		const sessdata = process.env.BILIBILI_SESSDATA || parsedUrl.searchParams.get("sessdata") || "";
 
 		if (!mediaId) {
 			return respond(res, 400, { error: "Missing media_id parameter" });
