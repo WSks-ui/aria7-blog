@@ -213,9 +213,7 @@ const managerConfigStr = JSON.stringify({
                     return;
                 }
             } else if (type === 'playlist') {
-                var savedMid = null;
-                try { savedMid = localStorage.getItem('music-bilibili-mid'); } catch (e) {}
-                var tracks = await fetchBilibiliCollectionTracks(id, savedMid);
+                var tracks = await fetchBilibiliCollectionTracks(id);
                 if (tracks.length > 0) {
                     state.playlist = tracks;
                     return;
@@ -267,11 +265,9 @@ const managerConfigStr = JSON.stringify({
         }];
     }
 
-    async function fetchBilibiliCollectionTracks(mediaId, optionalMid) {
+    async function fetchBilibiliCollectionTracks(mediaId) {
         if (!mediaId) return [];
-
         var url = '/api/bilibili-collection?media_id=' + encodeURIComponent(mediaId);
-        if (optionalMid) url += '&mid=' + encodeURIComponent(optionalMid);
         var res = await fetch(url);
         if (!res.ok) throw new Error('Collection proxy HTTP ' + res.status);
         var data = await res.json();
