@@ -50,7 +50,8 @@ export const ru: Translation = {
 	[Key.musicModeMeting]: "Онлайн (Meting)",
 	[Key.musicModeLocal]: "Локально",
 	[Key.musicModeBilibili]: "Bilibili",
-	[Key.musicSavedSources]: "Сохранённые",
+	[Key.musicSavedSources]: "Избранное",
+	[Key.musicMyCollections]: "Коллекции",
 	[Key.musicSave]: "Сохранить",
 	[Key.musicRemoveSource]: "Удалить",
 	[Key.musicNoSavedSources]:

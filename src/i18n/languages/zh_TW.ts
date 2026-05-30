@@ -51,6 +51,7 @@ export const zh_TW: Translation = {
 	[Key.musicModeLocal]: "本地音樂",
 	[Key.musicModeBilibili]: "B站視頻",
 	[Key.musicSavedSources]: "我的收藏",
+	[Key.musicMyCollections]: "我的合集",
 	[Key.musicSave]: "收藏",
 	[Key.musicRemoveSource]: "刪除",
 	[Key.musicNoSavedSources]: "暫無收藏，輸入 BV 號後點擊「收藏」添加",

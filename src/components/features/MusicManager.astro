@@ -497,7 +497,7 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
-    function addSavedSource(type, id, title, artist, pic) {
+    function addSavedSource(type, id, title, artist, pic, mid) {
         var list = getSavedSources();
         var found = false;
         for (var i = 0; i < list.length; i++) {
@@ -505,20 +505,23 @@ const managerConfigStr = JSON.stringify({
                 list[i].title = title;
                 list[i].artist = artist;
                 list[i].pic = pic;
+                if (mid) list[i].mid = mid;
                 list[i].savedAt = Date.now();
                 found = true;
                 break;
             }
         }
         if (!found) {
-            list.unshift({
+            var item = {
                 id: id,
                 type: type,
                 title: title,
                 artist: artist,
                 pic: pic || '',
                 savedAt: Date.now()
-            });
+            };
+            if (mid) item.mid = mid;
+            list.unshift(item);
         }
         try {
             localStorage.setItem(SAVED_KEY, JSON.stringify(list));

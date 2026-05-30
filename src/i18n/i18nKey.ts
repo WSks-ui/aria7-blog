@@ -70,6 +70,7 @@ enum I18nKey {
 	musicModeLocal = "musicModeLocal",
 	musicModeBilibili = "musicModeBilibili",
 	musicSavedSources = "musicSavedSources",
+	musicMyCollections = "musicMyCollections",
 	musicSave = "musicSave",
 	musicRemoveSource = "musicRemoveSource",
 	musicNoSavedSources = "musicNoSavedSources",

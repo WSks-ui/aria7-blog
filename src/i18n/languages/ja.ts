@@ -50,7 +50,8 @@ export const ja: Translation = {
 	[Key.musicModeMeting]: "オンライン (Meting)",
 	[Key.musicModeLocal]: "ローカル",
 	[Key.musicModeBilibili]: "Bilibili",
-	[Key.musicSavedSources]: "保存済み",
+	[Key.musicSavedSources]: "お気に入り",
+	[Key.musicMyCollections]: "コレクション",
 	[Key.musicSave]: "保存",
 	[Key.musicRemoveSource]: "削除",
 	[Key.musicNoSavedSources]:
