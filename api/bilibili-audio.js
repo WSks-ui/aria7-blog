@@ -3,6 +3,7 @@ export default async function handler(req, res) {
 		const parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 		const bvid = parsedUrl.searchParams.get("bvid");
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
+		const sessdata = parsedUrl.searchParams.get("sessdata") || "";
 
 		if (!bvid) {
 			res.statusCode = 400;
@@ -16,6 +17,7 @@ export default async function handler(req, res) {
 				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
 			Referer: "https://www.bilibili.com",
 		};
+		if (sessdata) apiHeaders.Cookie = "SESSDATA=" + sessdata;
 
 		const viewRes = await fetch(
 			`https://api.bilibili.com/x/web-interface/view?bvid=${bvid}`,
@@ -42,6 +44,8 @@ export default async function handler(req, res) {
 		const cid = v.cid;
 
 		if (metaOnly) {
+			var audioUrl = '/api/bilibili-audio?bvid=' + bvid;
+			if (sessdata) audioUrl += '&sessdata=' + encodeURIComponent(sessdata);
 			res.statusCode = 200;
 			res.setHeader("Content-Type", "application/json");
 			res.setHeader("Access-Control-Allow-Origin", "*");
@@ -50,7 +54,7 @@ export default async function handler(req, res) {
 					title: v.title || "Unknown",
 					artist: v.owner?.name || "",
 					pic: (v.pic || "").replace(/^http:/, "https:"),
-					audio_url: `/api/bilibili-audio?bvid=${bvid}`,
+					audio_url: audioUrl,
 				}),
 			);
 			return;

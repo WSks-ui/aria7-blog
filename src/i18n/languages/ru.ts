@@ -56,6 +56,19 @@ export const ru: Translation = {
 	[Key.musicRemoveSource]: "Удалить",
 	[Key.musicNoSavedSources]:
 		"Нет сохранённых. Введите BV ID и нажмите Сохранить.",
+	[Key.musicCookie]: "Cookie Bilibili (для доступа к приватным коллекциям)",
+	[Key.musicCookieHint]: "Вставьте значение SESSDATA...",
+	[Key.musicCookieSave]: "Сохранить",
+	[Key.musicCookieHelp]: "Как получить?",
+	[Key.musicCookieHelpTitle]: "Как получить Cookie Bilibili",
+	[Key.musicCookieHelpStep1]:
+		"Откройте bilibili.com в браузере и войдите в аккаунт Bilibili",
+	[Key.musicCookieHelpStep2]:
+		"Нажмите F12 → Application → Cookies → bilibili.com",
+	[Key.musicCookieHelpStep3]:
+		"Найдите строку SESSDATA, дважды кликните Value и скопируйте",
+	[Key.musicCookieHelpNote]:
+		"Cookie хранится только локально в браузере.\nПри истечении получите новый и вставьте заново.",
 
 	// Объявление
 	[Key.announcement]: "Объявление",

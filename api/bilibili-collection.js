@@ -4,6 +4,7 @@ export default async function handler(req, res) {
 		const mediaId = parsedUrl.searchParams.get("media_id");
 		const userMid = parseInt(parsedUrl.searchParams.get("mid")) || 0;
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
+		const sessdata = parsedUrl.searchParams.get("sessdata") || "";
 
 		if (!mediaId) {
 			return respond(res, 400, { error: "Missing media_id parameter" });
@@ -14,6 +15,7 @@ export default async function handler(req, res) {
 				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 			Referer: "https://www.bilibili.com",
 		};
+		if (sessdata) apiHeaders.Cookie = "SESSDATA=" + sessdata;
 
 		function respond(r, status, data) {
 			r.statusCode = status;
@@ -27,13 +29,14 @@ export default async function handler(req, res) {
 		}
 
 		function toTrackList(arr) {
+			var sessSuffix = sessdata ? '&sessdata=' + encodeURIComponent(sessdata) : '';
 			return (arr || []).slice(0, 10).map(function (m) {
 				return {
 					bvid: m.bvid,
 					title: m.title || "Unknown",
 					artist: (m.upper && m.upper.name) || "",
 					pic: cleanPic(m.cover || m.pic || ""),
-					audio_url: "/api/bilibili-audio?bvid=" + m.bvid,
+					audio_url: "/api/bilibili-audio?bvid=" + m.bvid + sessSuffix,
 				};
 			});
 		}
@@ -238,11 +241,12 @@ export default async function handler(req, res) {
 			});
 		}
 
+		var sessSuffix = sessdata ? '&sessdata=' + encodeURIComponent(sessdata) : '';
 		var playlist = medias.slice(0, 10).map(function (m) {
 			return {
 				name: m.title || "Unknown",
 				artist: (m.upper && m.upper.name) || "",
-				url: "/api/bilibili-audio?bvid=" + m.bvid,
+				url: "/api/bilibili-audio?bvid=" + m.bvid + sessSuffix,
 				pic: cleanPic(m.cover || m.pic || ""),
 				lrc: "",
 			};

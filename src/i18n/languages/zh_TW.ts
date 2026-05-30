@@ -55,6 +55,17 @@ export const zh_TW: Translation = {
 	[Key.musicSave]: "收藏",
 	[Key.musicRemoveSource]: "刪除",
 	[Key.musicNoSavedSources]: "暫無收藏，輸入 BV 號後點擊「收藏」添加",
+	[Key.musicCookie]: "B站 Cookie（登入後可訪問私有收藏夾）",
+	[Key.musicCookieHint]: "貼上 SESSDATA 的值...",
+	[Key.musicCookieSave]: "儲存",
+	[Key.musicCookieHelp]: "如何取得？",
+	[Key.musicCookieHelpTitle]: "取得 B站 Cookie 教學",
+	[Key.musicCookieHelpStep1]: "在瀏覽器中打開 bilibili.com 並登入你的 B站帳號",
+	[Key.musicCookieHelpStep2]:
+		"按 F12 打開開發者工具 → 應用程式/Application → Cookies → bilibili.com",
+	[Key.musicCookieHelpStep3]: "找到 SESSDATA 這一行，雙擊 Value 欄全選複製",
+	[Key.musicCookieHelpNote]:
+		"Cookie 僅儲存在你的瀏覽器本地，不會上傳到任何伺服器。\n過期後需重新取得並貼上。",
 
 	// 公告欄
 	[Key.announcement]: "公告",

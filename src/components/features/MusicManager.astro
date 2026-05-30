@@ -252,6 +252,7 @@ const managerConfigStr = JSON.stringify({
 
         // 通过服务端代理获取元数据（绕过 CORS）+ 音频代理 URL
         var metaUrl = '/api/bilibili-audio?bvid=' + bvid + '&meta=1';
+        metaUrl += getCookieParam();
         var metaRes = await fetch(metaUrl);
         if (!metaRes.ok) throw new Error('Bilibili meta proxy HTTP ' + metaRes.status);
         var meta = await metaRes.json();
@@ -268,11 +269,20 @@ const managerConfigStr = JSON.stringify({
     async function fetchBilibiliCollectionTracks(mediaId) {
         if (!mediaId) return [];
         var url = '/api/bilibili-collection?media_id=' + encodeURIComponent(mediaId);
+        url += getCookieParam();
         var res = await fetch(url);
         if (!res.ok) throw new Error('Collection proxy HTTP ' + res.status);
         var data = await res.json();
         if (data.error) throw new Error(data.error);
         return data.data || [];
+    }
+
+    function getCookieParam() {
+        try {
+            var c = localStorage.getItem('music-bilibili-cookie');
+            if (c) return '&sessdata=' + encodeURIComponent(c);
+        } catch (e) {}
+        return '';
     }
 
     // ── Lyrics ───────────────────────────────────────────────

@@ -74,6 +74,15 @@ enum I18nKey {
 	musicSave = "musicSave",
 	musicRemoveSource = "musicRemoveSource",
 	musicNoSavedSources = "musicNoSavedSources",
+	musicCookie = "musicCookie",
+	musicCookieHint = "musicCookieHint",
+	musicCookieSave = "musicCookieSave",
+	musicCookieHelp = "musicCookieHelp",
+	musicCookieHelpTitle = "musicCookieHelpTitle",
+	musicCookieHelpStep1 = "musicCookieHelpStep1",
+	musicCookieHelpStep2 = "musicCookieHelpStep2",
+	musicCookieHelpStep3 = "musicCookieHelpStep3",
+	musicCookieHelpNote = "musicCookieHelpNote",
 
 	themeColor = "themeColor",
 

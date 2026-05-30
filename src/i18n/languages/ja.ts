@@ -56,6 +56,20 @@ export const ja: Translation = {
 	[Key.musicRemoveSource]: "削除",
 	[Key.musicNoSavedSources]:
 		"まだ保存されていません。BV番号を入力して保存してください。",
+	[Key.musicCookie]:
+		"Bilibili Cookie（ログインでプライベートコレクションにアクセス可）",
+	[Key.musicCookieHint]: "SESSDATA の値を貼り付け...",
+	[Key.musicCookieSave]: "保存",
+	[Key.musicCookieHelp]: "取得方法は？",
+	[Key.musicCookieHelpTitle]: "Bilibili Cookie の取得方法",
+	[Key.musicCookieHelpStep1]:
+		"ブラウザで bilibili.com を開き、Bilibili アカウントにログイン",
+	[Key.musicCookieHelpStep2]:
+		"F12 → アプリケーション/Application → Cookies → bilibili.com",
+	[Key.musicCookieHelpStep3]:
+		"SESSDATA の行を見つけ、Value 列をダブルクリックしてコピー",
+	[Key.musicCookieHelpNote]:
+		"Cookie はブラウザ内にのみ保存され、サーバーには送信されません。\n期限切れ後は再取得して貼り付けてください。",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",

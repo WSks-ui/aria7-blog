@@ -43,6 +43,15 @@ const viewConfigStr = JSON.stringify({
 		save: i18n(I18nKey.musicSave),
 		removeSource: i18n(I18nKey.musicRemoveSource),
 		noSavedSources: i18n(I18nKey.musicNoSavedSources),
+		cookie: i18n(I18nKey.musicCookie),
+		cookieHint: i18n(I18nKey.musicCookieHint),
+		cookieSave: i18n(I18nKey.musicCookieSave),
+		cookieHelp: i18n(I18nKey.musicCookieHelp),
+		cookieHelpTitle: i18n(I18nKey.musicCookieHelpTitle),
+		cookieHelpStep1: i18n(I18nKey.musicCookieHelpStep1),
+		cookieHelpStep2: i18n(I18nKey.musicCookieHelpStep2),
+		cookieHelpStep3: i18n(I18nKey.musicCookieHelpStep3),
+		cookieHelpNote: i18n(I18nKey.musicCookieHelpNote),
 	},
 });
 
@@ -231,6 +240,29 @@ const widgetId =
                         <input type="text" class="source-mid-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder="用户 UID（可选，URL 中 space.bilibili.com/ 后的数字）" />
                     </div>
 
+                    <button class="cookie-toggle-btn flex items-center gap-1 text-[10px] text-neutral-400 hover:text-(--primary) transition-colors" type="button">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M12 17a2 2 0 0 1-2-2c0-1.11.89-2 2-2a2 2 0 0 1 0 4m6 3V10H6v10zm0-12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V10c0-1.11.89-2 2-2h1V6a5 5 0 0 1 5-5a5 5 0 0 1 5 5v2zm-6-5a3 3 0 0 0-3 3v2h6V6a3 3 0 0 0-3-3"/></svg>
+                        {i18n(I18nKey.musicCookie)}
+                    </button>
+
+                    <div class="cookie-section hidden flex flex-col gap-2">
+                        <div class="cookie-tutorial text-[10px] text-neutral-400 leading-relaxed bg-neutral-50 dark:bg-white/5 rounded-lg p-2">
+                            <div class="font-medium text-neutral-500 mb-1">{i18n(I18nKey.musicCookieHelpTitle)}</div>
+                            <ol class="list-decimal pl-3 space-y-0.5">
+                                <li>{i18n(I18nKey.musicCookieHelpStep1)}</li>
+                                <li>{i18n(I18nKey.musicCookieHelpStep2)}</li>
+                                <li>{i18n(I18nKey.musicCookieHelpStep3)}</li>
+                            </ol>
+                            <div class="mt-1 text-neutral-400" style="white-space: pre-line;">{i18n(I18nKey.musicCookieHelpNote)}</div>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="password" class="source-cookie-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder={i18n(I18nKey.musicCookieHint)} />
+                            <button class="btn-cookie-save px-3 py-1.5 text-xs font-medium rounded-lg bg-(--primary)/10 text-(--primary) hover:bg-(--primary)/20 transition-all active:scale-95 shrink-0" type="button">
+                                {i18n(I18nKey.musicCookieSave)}
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="flex justify-end">
                         <button class="btn-source-save text-xs font-medium text-(--primary) hover:underline transition-all active:scale-95">
                             {i18n(I18nKey.musicSave)}
@@ -296,6 +328,14 @@ const widgetId =
     var widget = document.getElementById(widgetId);
     if (!widget) return;
 
+    function getCookieQS() {
+        try {
+            var c = localStorage.getItem('music-bilibili-cookie');
+            if (c) return '&sessdata=' + encodeURIComponent(c);
+        } catch (e) {}
+        return '';
+    }
+
     var mgr = window.__fireflyMusic;
     if (!mgr) return;
 
@@ -349,6 +389,10 @@ const widgetId =
         savedCollectionEmpty: widget.querySelector('.saved-sources-empty-collection'),
         sourceMidRow: widget.querySelector('.source-mid-row'),
         sourceMidInput: widget.querySelector('.source-mid-input'),
+        cookieToggle: widget.querySelector('.cookie-toggle-btn'),
+        cookieSection: widget.querySelector('.cookie-section'),
+        cookieInput: widget.querySelector('.source-cookie-input'),
+        cookieSaveBtn: widget.querySelector('.btn-cookie-save'),
         currentSource: widget.querySelector('.current-source')
     };
 
@@ -921,6 +965,7 @@ const widgetId =
                     apiUrl += '&mid=' + encodeURIComponent(midVal);
                     try { localStorage.setItem('music-bilibili-mid', midVal); } catch (e) {}
                 }
+                apiUrl += getCookieQS();
 
                 fetch(apiUrl)
                     .then(function (r) { return r.json(); })
@@ -1081,6 +1126,7 @@ const widgetId =
                     var mid = src.mid || '';
                     var apiUrl = '/api/bilibili-collection?media_id=' + encodeURIComponent(src.id) + '&meta=1';
                     if (mid) apiUrl += '&mid=' + encodeURIComponent(mid);
+                    apiUrl += getCookieQS();
 
                     fetch(apiUrl)
                         .then(function (r) { return r.json(); })
@@ -1167,6 +1213,43 @@ const widgetId =
         on('fm:saved-sources', function () {
             renderSavedSources();
         });
+
+        // ── Cookie section toggle ────────────────────────────
+        if (ui.cookieToggle && ui.cookieSection) {
+            ui.cookieToggle.addEventListener('click', function () {
+                var isOpen = !ui.cookieSection.classList.contains('hidden');
+                if (isOpen) {
+                    ui.cookieSection.classList.add('hidden');
+                } else {
+                    ui.cookieSection.classList.remove('hidden');
+                    // Pre-fill from localStorage
+                    if (ui.cookieInput) {
+                        try {
+                            var savedCookie = localStorage.getItem('music-bilibili-cookie');
+                            ui.cookieInput.value = savedCookie || '';
+                        } catch (e) {}
+                    }
+                }
+            });
+
+            if (ui.cookieSaveBtn && ui.cookieInput) {
+                ui.cookieSaveBtn.addEventListener('click', function () {
+                    var val = ui.cookieInput.value.trim();
+                    if (!val) {
+                        try { localStorage.removeItem('music-bilibili-cookie'); } catch (e) {}
+                        ui.cookieInput.value = '';
+                        return;
+                    }
+                    try { localStorage.setItem('music-bilibili-cookie', val); } catch (e) {}
+                    // Brief feedback
+                    var orig = ui.cookieSaveBtn.textContent;
+                    ui.cookieSaveBtn.textContent = '✓ ' + cfg.i18n.cookieSave;
+                    setTimeout(function () {
+                        ui.cookieSaveBtn.textContent = orig;
+                    }, 1500);
+                });
+            }
+        }
 
         function closeSourceDrawer() {
             ui.sourceDrawer.style.gridTemplateRows = '0fr';
