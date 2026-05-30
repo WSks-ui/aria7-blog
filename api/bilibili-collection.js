@@ -61,26 +61,7 @@ export default async function handler(req, res) {
 			}
 		} catch (e) { /* ok */ }
 
-		// ── Step 2: Try fav/resource/ids (lightweight, may not need auth) ──
-		if (!medias) {
-			try {
-				var idsRes = await fetch(
-					"https://api.bilibili.com/x/v3/fav/resource/ids?media_id=" + mediaId,
-					{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
-				);
-				if (idsRes.ok) {
-					var idsData = await idsRes.json();
-					if (idsData.code === 0 && idsData.data && idsData.data.length > 0) {
-						var bvids = idsData.data.map(function (item) {
-							return { bvid: item.bvid, title: "Video " + item.bvid, upper: {}, cover: "" };
-						});
-						medias = bvids;
-					}
-				}
-			} catch (e) { /* ok */ }
-		}
-
-		// ── Step 3: Try fav/resource/list ──────────────────────────
+		// ── Step 2: Try fav/resource/list ──────────────────────────
 		if (!medias) {
 			try {
 				var fl = await fetch(
@@ -102,7 +83,7 @@ export default async function handler(req, res) {
 			} catch (e) { /* ok */ }
 		}
 
-		// ── Step 4: Try seasons API ───────────────────────────────
+		// ── Step 3: Try seasons API ───────────────────────────────
 		if (!medias && foundMid) {
 			try {
 				var sl = await fetch(
@@ -125,7 +106,7 @@ export default async function handler(req, res) {
 			} catch (e) { /* ok */ }
 		}
 
-		// ── Step 5: Try series API ────────────────────────────────
+		// ── Step 4: Try series API ────────────────────────────────
 		if (!medias && foundMid) {
 			try {
 				var sr = await fetch(
@@ -147,7 +128,7 @@ export default async function handler(req, res) {
 			} catch (e) { /* ok */ }
 		}
 
-		// ── Step 6: HTML page parse (last resort) ─────────────────
+		// ── Step 5: HTML page scrape (last resort) ─────────────────
 		if (!medias && foundMid) {
 			try {
 				var htmlRes = await fetch(
@@ -158,9 +139,9 @@ export default async function handler(req, res) {
 				if (htmlRes.ok) {
 					var html = await htmlRes.text();
 					// Try __INITIAL_STATE__ extraction
-					var stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});\s*\(function/);
+					var stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*});\s*\(function/);
 					if (!stateMatch) {
-						stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});/);
+						stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*});/);
 					}
 					if (stateMatch) {
 						try {
