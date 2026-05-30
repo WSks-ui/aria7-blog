@@ -221,7 +221,7 @@ export default async function handler(req, res) {
 					: "Please provide the Bilibili user ID (mid). "
 					+ "e.g. space.bilibili.com/450438868 → mid=450438868"
 				);
-			return respond(res, 502, { error: msg });
+			return respond(res, 200, { error: msg });
 		}
 
 		if (!title) title = "Collection " + mediaId;
@@ -248,10 +248,7 @@ export default async function handler(req, res) {
 		return respond(res, 200, { title: title, cover: cover, data: playlist });
 	} catch (err) {
 		if (!res.headersSent) {
-			res.statusCode = 502;
-			res.setHeader("Content-Type", "application/json");
-			res.setHeader("Access-Control-Allow-Origin", "*");
+			respond(res, 200, { error: err.message || String(err) });
 		}
-		res.end(JSON.stringify({ error: err.message || String(err) }));
 	}
 }
