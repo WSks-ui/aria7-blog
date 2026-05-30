@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
 		const apiHeaders = {
 			"User-Agent":
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
 			Referer: "https://www.bilibili.com",
 		};
 
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
 		var foundMid = mid;
 		var medias = null;
 
-		// ── Step 1: Metadata via fav/folder/info ────────────────
+		// ── Step 1: Metadata via fav/folder/info ──────────────────
 		try {
 			var mi = await fetch(
 				"https://api.bilibili.com/x/v3/fav/folder/info?media_id=" + mediaId,
@@ -61,23 +61,48 @@ export default async function handler(req, res) {
 			}
 		} catch (e) { /* ok */ }
 
-		// ── Step 2: Get video list ──────────────────────────────
-		// 2a: fav/resource/list (public collections sometimes work)
-		try {
-			var fl = await fetch(
-				"https://api.bilibili.com/x/v3/fav/resource/list?media_id=" + mediaId +
-				"&pn=1&ps=20&platform=web",
-				{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
-			);
-			if (fl.ok) {
-				var fldata = await fl.json();
-				if (fldata.code === 0) {
-					medias = fldata.data && fldata.data.medias;
+		// ── Step 2: Try fav/resource/ids (lightweight, may not need auth) ──
+		if (!medias) {
+			try {
+				var idsRes = await fetch(
+					"https://api.bilibili.com/x/v3/fav/resource/ids?media_id=" + mediaId,
+					{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
+				);
+				if (idsRes.ok) {
+					var idsData = await idsRes.json();
+					if (idsData.code === 0 && idsData.data && idsData.data.length > 0) {
+						var bvids = idsData.data.map(function (item) {
+							return { bvid: item.bvid, title: "Video " + item.bvid, upper: {}, cover: "" };
+						});
+						medias = bvids;
+					}
 				}
-			}
-		} catch (e) { /* ok */ }
+			} catch (e) { /* ok */ }
+		}
 
-		// 2b: seasons API (needs mid, works for public collections)
+		// ── Step 3: Try fav/resource/list ──────────────────────────
+		if (!medias) {
+			try {
+				var fl = await fetch(
+					"https://api.bilibili.com/x/v3/fav/resource/list?media_id=" + mediaId +
+					"&pn=1&ps=20&platform=web&web_location=1550101",
+					{ headers: { ...apiHeaders, Origin: "https://www.bilibili.com" } },
+				);
+				if (fl.ok) {
+					var fldata = await fl.json();
+					if (fldata.code === 0 && fldata.data) {
+						medias = fldata.data.medias;
+						if (fldata.data.info) {
+							title = fldata.data.info.title || title;
+							cover = cleanPic(fldata.data.info.cover || cover);
+							count = fldata.data.info.media_count || count;
+						}
+					}
+				}
+			} catch (e) { /* ok */ }
+		}
+
+		// ── Step 4: Try seasons API ───────────────────────────────
 		if (!medias && foundMid) {
 			try {
 				var sl = await fetch(
@@ -92,16 +117,15 @@ export default async function handler(req, res) {
 						title = smeta.name || title;
 						count = smeta.total || count;
 						cover = cleanPic(smeta.cover || cover);
-						var archives = sldata.data.archives || [];
-						medias = archives.map(function (a) {
-							return { bvid: a.bvid, title: a.title, upper: a.owner, cover: a.pic || a.cover };
+						medias = (sldata.data.archives || []).map(function (a) {
+							return { bvid: a.bvid, title: a.title, upper: a.owner || {}, cover: a.pic || a.cover };
 						});
 					}
 				}
 			} catch (e) { /* ok */ }
 		}
 
-		// 2c: series API (needs mid)
+		// ── Step 5: Try series API ────────────────────────────────
 		if (!medias && foundMid) {
 			try {
 				var sr = await fetch(
@@ -115,10 +139,67 @@ export default async function handler(req, res) {
 						var srmeta = srdata.data.meta || {};
 						title = srmeta.name || title;
 						count = srmeta.total || count;
-						var archives = srdata.data.archives || [];
-						medias = archives.map(function (a) {
-							return { bvid: a.bvid, title: a.title, upper: a.owner, cover: a.pic || a.cover };
+						medias = (srdata.data.archives || []).map(function (a) {
+							return { bvid: a.bvid, title: a.title, upper: a.owner || {}, cover: a.pic || a.cover };
 						});
+					}
+				}
+			} catch (e) { /* ok */ }
+		}
+
+		// ── Step 6: HTML page parse (last resort) ─────────────────
+		if (!medias && foundMid) {
+			try {
+				var htmlRes = await fetch(
+					"https://space.bilibili.com/" + foundMid +
+					"/favlist?fid=" + mediaId + "&ftype=create",
+					{ headers: apiHeaders },
+				);
+				if (htmlRes.ok) {
+					var html = await htmlRes.text();
+					// Try __INITIAL_STATE__ extraction
+					var stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});\s*\(function/);
+					if (!stateMatch) {
+						stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*?});/);
+					}
+					if (stateMatch) {
+						try {
+							var state = JSON.parse(stateMatch[1]);
+							var listData = null;
+							if (state.favListRes && state.favListRes.data && state.favListRes.data.medias) {
+								listData = state.favListRes.data;
+							} else if (state.listRes && state.listRes.data && state.listRes.data.medias) {
+								listData = state.listRes.data;
+							} else if (state.mediaList && state.mediaList.data && state.mediaList.data.medias) {
+								listData = state.mediaList.data;
+							}
+							if (listData) {
+								title = (listData.info && listData.info.title) || title;
+								count = (listData.info && listData.info.media_count) || count;
+								cover = cleanPic((listData.info && listData.info.cover) || cover);
+								medias = listData.medias;
+							}
+						} catch (parseErr) {
+							// __INITIAL_STATE__ parse failed, try regex fallback
+						}
+					}
+					// Regex fallback: extract all BVIDs from the page
+					if (!medias) {
+						var bvidRegex = /BV[a-zA-Z0-9]{10}/g;
+						var raw = html.match(bvidRegex) || [];
+						var seen = {};
+						var unique = [];
+						for (var k = 0; k < raw.length; k++) {
+							if (!seen[raw[k]]) {
+								seen[raw[k]] = true;
+								unique.push(raw[k]);
+							}
+						}
+						if (unique.length > 0) {
+							medias = unique.map(function (bvid) {
+								return { bvid: bvid, title: "BV " + bvid, upper: {}, cover: "" };
+							});
+						}
 					}
 				}
 			} catch (e) { /* ok */ }
@@ -128,7 +209,7 @@ export default async function handler(req, res) {
 			var msg =
 				"Cannot fetch collection contents. " +
 				(foundMid
-					? "The collection may be private. Set it to public in Bilibili settings."
+					? "The collection may be private. Set it to public in Bilibili settings: 空间 → 收藏夹 → 编辑 → 公开."
 					: "Please also provide the Bilibili user ID (mid) from the URL. "
 					+ "e.g. space.bilibili.com/450438868 → mid=450438868"
 				);
