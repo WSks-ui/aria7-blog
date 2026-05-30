@@ -68,12 +68,6 @@ export default async function handler(req, res) {
 			}
 		} catch (e) { /* ok */ }
 
-		if (count === 0 && title) {
-			return respond(res, 502, {
-				error: 'Collection "' + title + '" is empty (0 videos).',
-			});
-		}
-
 		// ── Step 2: Try fav/resource/list ──────────────────────────
 		if (!medias) {
 			try {
