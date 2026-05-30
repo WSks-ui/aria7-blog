@@ -2,7 +2,7 @@ export default async function handler(req, res) {
 	try {
 		const parsedUrl = new URL(req.url, `http://${req.headers.host || "localhost"}`);
 		const mediaId = parsedUrl.searchParams.get("media_id");
-		const mid = parseInt(parsedUrl.searchParams.get("mid")) || 0;
+		const userMid = parseInt(parsedUrl.searchParams.get("mid")) || 0;
 		const metaOnly = parsedUrl.searchParams.get("meta") === "1";
 
 		if (!mediaId) {
@@ -41,10 +41,10 @@ export default async function handler(req, res) {
 		var title = "";
 		var cover = "";
 		var count = 0;
-		var foundMid = mid;
+		var collectionMid = userMid;
 		var medias = null;
 
-		// ── Step 1: Metadata via fav/folder/info ──────────────────
+		// ── Step 1: Metadata via fav/folder/info (public, no auth) ──
 		try {
 			var mi = await fetch(
 				"https://api.bilibili.com/x/v3/fav/folder/info?media_id=" + mediaId,
@@ -54,12 +54,22 @@ export default async function handler(req, res) {
 				var midata = await mi.json();
 				if (midata.code === 0 && midata.data) {
 					title = midata.data.title || title;
-					count = midata.data.media_count || count;
+					count = typeof midata.data.media_count === "number" ? midata.data.media_count : count;
 					cover = cleanPic(midata.data.cover || cover);
-					foundMid = foundMid || (midata.data.mid || 0);
+					// API-discovered mid always overrides user-provided mid
+					if (midata.data.mid) collectionMid = midata.data.mid;
+					if (midata.data.upper && midata.data.upper.name && !title) {
+						title = midata.data.upper.name + "'s Collection";
+					}
 				}
 			}
 		} catch (e) { /* ok */ }
+
+		if (count === 0 && title) {
+			return respond(res, 502, {
+				error: 'Collection "' + title + '" is empty (0 videos).',
+			});
+		}
 
 		// ── Step 2: Try fav/resource/list ──────────────────────────
 		if (!medias) {
@@ -84,11 +94,11 @@ export default async function handler(req, res) {
 		}
 
 		// ── Step 3: Try seasons API ───────────────────────────────
-		if (!medias && foundMid) {
+		if (!medias && collectionMid) {
 			try {
 				var sl = await fetch(
 					"https://api.bilibili.com/x/polymer/space/seasons_archives_list?mid=" +
-					foundMid + "&season_id=" + mediaId + "&page_num=1&page_size=20",
+					collectionMid + "&season_id=" + mediaId + "&page_num=1&page_size=20",
 					{ headers: apiHeaders },
 				);
 				if (sl.ok) {
@@ -107,11 +117,11 @@ export default async function handler(req, res) {
 		}
 
 		// ── Step 4: Try series API ────────────────────────────────
-		if (!medias && foundMid) {
+		if (!medias && collectionMid) {
 			try {
 				var sr = await fetch(
 					"https://api.bilibili.com/x/series/archives?mid=" +
-					foundMid + "&series_id=" + mediaId + "&pn=1&ps=20",
+					collectionMid + "&series_id=" + mediaId + "&pn=1&ps=20",
 					{ headers: apiHeaders },
 				);
 				if (sr.ok) {
@@ -129,19 +139,29 @@ export default async function handler(req, res) {
 		}
 
 		// ── Step 5: HTML page scrape (last resort) ─────────────────
-		if (!medias && foundMid) {
+		if (!medias && collectionMid) {
 			try {
 				var htmlRes = await fetch(
-					"https://space.bilibili.com/" + foundMid +
+					"https://space.bilibili.com/" + collectionMid +
 					"/favlist?fid=" + mediaId + "&ftype=create",
-					{ headers: apiHeaders },
+					{
+						headers: {
+							...apiHeaders,
+							Accept: "text/html,application/xhtml+xml",
+						},
+					},
 				);
 				if (htmlRes.ok) {
 					var html = await htmlRes.text();
-					// Try __INITIAL_STATE__ extraction
-					var stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*});\s*\(function/);
+
+					// Try __INITIAL_STATE__ extraction (greedy match to get full JSON)
+					var stateMatch = html.match(
+						/window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*\});[\s]*\(function/,
+					);
 					if (!stateMatch) {
-						stateMatch = html.match(/window\.__INITIAL_STATE__\s*=\s*({[\s\S]*});/);
+						stateMatch = html.match(
+							/window\.__INITIAL_STATE__\s*=\s*(\{[\s\S]*\});/,
+						);
 					}
 					if (stateMatch) {
 						try {
@@ -154,6 +174,13 @@ export default async function handler(req, res) {
 							} else if (state.mediaList && state.mediaList.data && state.mediaList.data.medias) {
 								listData = state.mediaList.data;
 							}
+							// Also try deeper paths
+							if (!listData && state.favRes && state.favRes.data && state.favRes.data.medias) {
+								listData = state.favRes.data;
+							}
+							if (!listData && state.data && state.data.medias) {
+								listData = state.data;
+							}
 							if (listData) {
 								title = (listData.info && listData.info.title) || title;
 								count = (listData.info && listData.info.media_count) || count;
@@ -161,10 +188,11 @@ export default async function handler(req, res) {
 								medias = listData.medias;
 							}
 						} catch (parseErr) {
-							// __INITIAL_STATE__ parse failed, try regex fallback
+							// JSON parse failed, try regex fallback
 						}
 					}
-					// Regex fallback: extract all BVIDs from the page
+
+					// Regex fallback: extract BVIDs from page
 					if (!medias) {
 						var bvidRegex = /BV[a-zA-Z0-9]{10}/g;
 						var raw = html.match(bvidRegex) || [];
@@ -178,7 +206,7 @@ export default async function handler(req, res) {
 						}
 						if (unique.length > 0) {
 							medias = unique.map(function (bvid) {
-								return { bvid: bvid, title: "BV " + bvid, upper: {}, cover: "" };
+								return { bvid: bvid, title: bvid, upper: {}, cover: "" };
 							});
 						}
 					}
@@ -187,11 +215,13 @@ export default async function handler(req, res) {
 		}
 
 		if (!medias || medias.length === 0) {
-			var msg =
-				"Cannot fetch collection contents. " +
-				(foundMid
-					? "The collection may be private. Set it to public in Bilibili settings: 空间 → 收藏夹 → 编辑 → 公开."
-					: "Please also provide the Bilibili user ID (mid) from the URL. "
+			var detailSuffix = collectionMid && collectionMid !== userMid
+				? " (Note: this collection belongs to user " + collectionMid + ", not " + userMid + ")"
+				: "";
+			var msg = "Cannot fetch collection contents. "
+				+ (collectionMid
+					? "The collection may require authentication." + detailSuffix
+					: "Please provide the Bilibili user ID (mid). "
 					+ "e.g. space.bilibili.com/450438868 → mid=450438868"
 				);
 			return respond(res, 502, { error: msg });
