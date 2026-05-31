@@ -42,17 +42,21 @@ export const ja: Translation = {
 	[Key.musicAudioPlayer]: "オーディオプレーヤー",
 	[Key.musicSource]: "音源",
 	[Key.musicSourceVideo]: "単一動画",
+	[Key.musicSourcePlaylist]: "コレクション",
 	[Key.musicSourceInputHint]: "BV番号を入力",
+	[Key.musicSourceInputHintPlaylist]: "コレクションIDを入力",
 	[Key.musicSourceApply]: "適用",
 	[Key.musicSourceCurrent]: "現在：{id}",
 	[Key.musicModeMeting]: "オンライン (Meting)",
 	[Key.musicModeLocal]: "ローカル",
 	[Key.musicModeBilibili]: "Bilibili",
 	[Key.musicSavedSources]: "お気に入り",
+	[Key.musicMyCollections]: "コレクション",
 	[Key.musicSave]: "保存",
 	[Key.musicRemoveSource]: "削除",
 	[Key.musicNoSavedSources]:
 		"まだ保存されていません。BV番号を入力して保存してください。",
+	[Key.musicPlayAll]: "全て再生",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",

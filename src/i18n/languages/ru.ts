@@ -42,17 +42,21 @@ export const ru: Translation = {
 	[Key.musicAudioPlayer]: "Аудиоплеер",
 	[Key.musicSource]: "Источник",
 	[Key.musicSourceVideo]: "Одно видео",
+	[Key.musicSourcePlaylist]: "Сборник",
 	[Key.musicSourceInputHint]: "Введите BV ID",
+	[Key.musicSourceInputHintPlaylist]: "ID коллекции",
 	[Key.musicSourceApply]: "Применить",
 	[Key.musicSourceCurrent]: "Текущий: {id}",
 	[Key.musicModeMeting]: "Онлайн (Meting)",
 	[Key.musicModeLocal]: "Локально",
 	[Key.musicModeBilibili]: "Bilibili",
 	[Key.musicSavedSources]: "Избранное",
+	[Key.musicMyCollections]: "Коллекции",
 	[Key.musicSave]: "Сохранить",
 	[Key.musicRemoveSource]: "Удалить",
 	[Key.musicNoSavedSources]:
 		"Нет сохранённых. Введите BV ID и нажмите Сохранить.",
+	[Key.musicPlayAll]: "Всё",
 
 	// Объявление
 	[Key.announcement]: "Объявление",

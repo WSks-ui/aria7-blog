@@ -42,17 +42,21 @@ export const en: Translation = {
 	[Key.musicAudioPlayer]: "Audio Player",
 	[Key.musicSource]: "Source",
 	[Key.musicSourceVideo]: "Single Video",
+	[Key.musicSourcePlaylist]: "Collection",
 	[Key.musicSourceInputHint]: "Enter BV ID",
+	[Key.musicSourceInputHintPlaylist]: "Enter Collection ID",
 	[Key.musicSourceApply]: "Apply",
 	[Key.musicSourceCurrent]: "Current: {id}",
 	[Key.musicModeMeting]: "Online (Meting)",
 	[Key.musicModeLocal]: "Local",
 	[Key.musicModeBilibili]: "Bilibili",
 	[Key.musicSavedSources]: "Favorites",
+	[Key.musicMyCollections]: "Collections",
 	[Key.musicSave]: "Save",
 	[Key.musicRemoveSource]: "Remove",
 	[Key.musicNoSavedSources]:
 		"No saved sources yet. Enter a BV ID and click Save.",
+	[Key.musicPlayAll]: "Play All",
 
 	// Announcement
 	[Key.announcement]: "Announcement",
