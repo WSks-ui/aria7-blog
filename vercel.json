@@ -7,6 +7,10 @@
     "api/bilibili-audio.js": {
       "memory": 512,
       "maxDuration": 30
+    },
+    "api/bilibili-collection.js": {
+      "memory": 512,
+      "maxDuration": 30
     }
   },
   "headers": [
