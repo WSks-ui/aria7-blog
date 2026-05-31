@@ -2,7 +2,7 @@
 title: 为 Firefly 的音乐播放器添加 B站爬取音乐功能
 published: 2026-05-31
 description: 从零开始，给博客音乐播放器加上 Bilibili 音频爬取、自建播放列表、多曲目队列的完整历程
-image: "/assets/images/posts/B站音乐播放器/full-player.png"
+image: "/assets/images/posts/B站音乐播放器/cover.png"
 tags: ["Astro", "Firefly", "音乐播放器", "Bilibili", "JavaScript", "博客"]
 category: "技术"
 ---
@@ -121,8 +121,6 @@ var state = {
 状态全在 Manager 中，Player 只监听事件渲染 UI。这种**事件驱动 + 单向数据流**的设计让两个组件解耦得很好。
 
 ![播放器控制区域：进度条、音量、播放/暂停、列表/歌词抽屉](/assets/images/posts/B站音乐播放器/player-controls.png)
-
-<img src="/assets/images/posts/B站音乐播放器/full-player.png" alt="完整的播放器展开状态：播放列表和音源面板" style="max-height: 600px; width: 100%; object-fit: contain; border-radius: 8px;" />
 
 ---
 
