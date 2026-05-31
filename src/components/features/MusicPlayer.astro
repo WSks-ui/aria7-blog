@@ -30,16 +30,13 @@ const viewConfigStr = JSON.stringify({
 		music: i18n(I18nKey.music),
 		source: i18n(I18nKey.musicSource),
 		sourceVideo: i18n(I18nKey.musicSourceVideo),
-		sourcePlaylist: i18n(I18nKey.musicSourcePlaylist),
 		sourceApply: i18n(I18nKey.musicSourceApply),
 		sourceInputHint: i18n(I18nKey.musicSourceInputHint),
-		sourceInputHintPlaylist: i18n(I18nKey.musicSourceInputHintPlaylist),
 		sourceCurrent: i18n(I18nKey.musicSourceCurrent),
 		modeMeting: i18n(I18nKey.musicModeMeting),
 		modeLocal: i18n(I18nKey.musicModeLocal),
 		modeBilibili: i18n(I18nKey.musicModeBilibili),
 		savedSources: i18n(I18nKey.musicSavedSources),
-		myCollections: i18n(I18nKey.musicMyCollections),
 		save: i18n(I18nKey.musicSave),
 		removeSource: i18n(I18nKey.musicRemoveSource),
 		noSavedSources: i18n(I18nKey.musicNoSavedSources),
@@ -212,23 +209,13 @@ const widgetId =
                             <Icon name="material-symbols:video-library-rounded" class="text-sm shrink-0" aria-hidden="true" />
                             {i18n(I18nKey.musicSourceVideo)}
                         </label>
-                        <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
-                            <input type="radio" name={`source-type-${widgetId}`} value="playlist" class="hidden" />
-                            <Icon name="material-symbols:playlist-play-rounded" class="text-sm shrink-0" aria-hidden="true" />
-                            {i18n(I18nKey.musicSourcePlaylist)}
-                        </label>
                     </div>
 
-                    <!-- Input field -->
                     <div class="flex gap-2">
                         <input type="text" class="source-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder={i18n(I18nKey.musicSourceInputHint)} />
                         <button class="btn-source-apply px-3 py-1.5 text-xs font-medium rounded-lg bg-(--primary) text-white hover:brightness-110 transition-all active:scale-95 shrink-0" aria-label={i18n(I18nKey.musicSourceApply)}>
                             {i18n(I18nKey.musicSourceApply)}
                         </button>
-                    </div>
-
-                    <div class="source-mid-row hidden flex gap-2">
-                        <input type="text" class="source-mid-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder="用户 UID（可选，URL 中 space.bilibili.com/ 后的数字）" />
                     </div>
 
                     <div class="flex justify-end">
@@ -246,17 +233,6 @@ const widgetId =
                         <div class="saved-sources-list-video flex flex-col gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
                             <div class="saved-sources-empty-video text-[10px] text-neutral-400 leading-relaxed">
                                 {i18n(I18nKey.musicNoSavedSources)}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="saved-section">
-                        <div class="text-xs font-medium text-neutral-500 mb-1.5">
-                            {i18n(I18nKey.musicMyCollections)}
-                        </div>
-                        <div class="saved-sources-list-collection flex flex-col gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                            <div class="saved-sources-empty-collection text-[10px] text-neutral-400 leading-relaxed">
-                                暂无合集
                             </div>
                         </div>
                     </div>
@@ -339,16 +315,11 @@ const widgetId =
         sourceDrawer: widget.querySelector('.source-drawer'),
         sourceInput: widget.querySelector('.source-input'),
         btnSourceApply: widget.querySelector('.btn-source-apply'),
-        sourceTypeRadios: widget.querySelectorAll('input[name="source-type-' + widgetId + '"]'),
         modeRadios: widget.querySelectorAll('input[name="music-mode-' + widgetId + '"]'),
         bilibiliSection: widget.querySelector('.source-bilibili-section'),
         btnSourceSave: widget.querySelector('.btn-source-save'),
         savedVideoList: widget.querySelector('.saved-sources-list-video'),
         savedVideoEmpty: widget.querySelector('.saved-sources-empty-video'),
-        savedCollectionList: widget.querySelector('.saved-sources-list-collection'),
-        savedCollectionEmpty: widget.querySelector('.saved-sources-empty-collection'),
-        sourceMidRow: widget.querySelector('.source-mid-row'),
-        sourceMidInput: widget.querySelector('.source-mid-input'),
         currentSource: widget.querySelector('.current-source')
     };
 
@@ -443,8 +414,7 @@ const widgetId =
         };
         var label = modeLabels[mode] || mode;
         if (mode === 'bilibili' && s.config.bilibili && s.config.bilibili.id) {
-            var typeLabel = s.config.bilibili.type === 'playlist' ? cfg.i18n.sourcePlaylist : cfg.i18n.sourceVideo;
-            ui.currentSource.innerText = label + ' · ' + typeLabel + ' ' + s.config.bilibili.id;
+            ui.currentSource.innerText = label + ' · ' + s.config.bilibili.id;
         } else {
             ui.currentSource.innerText = label;
         }
@@ -807,25 +777,12 @@ const widgetId =
                 });
                 updateBilibiliSectionVisibility(currentMode);
 
-                // Set correct input placeholder
-                updateInputPlaceholder();
-
                 // Load saved sources list
                 mgr.broadcastSavedSources();
 
                 // Pre-fill bilibili input if applicable
                 if (currentMode === 'bilibili' && s && s.config && s.config.bilibili) {
                     ui.sourceInput.value = s.config.bilibili.id || '';
-                    var type = s.config.bilibili.type || 'video';
-                    ui.sourceTypeRadios.forEach(function (r) {
-                        r.checked = r.value === type;
-                    });
-                    // Pre-fill mid from localStorage
-                    if (ui.sourceMidInput) {
-                        var savedMid = null;
-                        try { savedMid = localStorage.getItem('music-bilibili-mid'); } catch (e) {}
-                        ui.sourceMidInput.value = savedMid || '';
-                    }
                 }
 
                 ui.sourceDrawer.style.gridTemplateRows = '1fr';
@@ -848,28 +805,6 @@ const widgetId =
             }
         }
 
-        function updateInputPlaceholder() {
-            if (!ui.sourceInput) return;
-            var typeEl = null;
-            ui.sourceTypeRadios.forEach(function (r) {
-                if (r.checked) typeEl = r;
-            });
-            var isPlaylist = typeEl && typeEl.value === 'playlist';
-            ui.sourceInput.placeholder = isPlaylist
-                ? cfg.i18n.sourceInputHintPlaylist
-                : cfg.i18n.sourceInputHint;
-            if (ui.sourceMidRow) {
-                ui.sourceMidRow.classList.toggle('hidden', !isPlaylist);
-            }
-        }
-
-        // Source-type radio change → update placeholder
-        ui.sourceTypeRadios.forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                updateInputPlaceholder();
-            });
-        });
-
         // Mode radio change → switch mode
         ui.modeRadios.forEach(function (radio) {
             radio.addEventListener('change', function () {
@@ -882,45 +817,22 @@ const widgetId =
 
         // Bilibili source apply
         ui.btnSourceApply.addEventListener('click', function () {
-            var typeEl = null;
-            ui.sourceTypeRadios.forEach(function (r) {
-                if (r.checked) typeEl = r;
-            });
-            var type = typeEl ? typeEl.value : 'video';
             var id = ui.sourceInput.value.trim();
             if (!id) return;
-
-            // Save mid to localStorage for future use
-            if (type === 'playlist' && ui.sourceMidInput && ui.sourceMidInput.value.trim()) {
-                try { localStorage.setItem('music-bilibili-mid', ui.sourceMidInput.value.trim()); } catch (e) {}
-            }
-
             closeSourceDrawer();
-            mgr.setBilibiliSource(type, id);
+            mgr.setBilibiliSource('video', id);
         });
 
         // Bilibili source save
         if (ui.btnSourceSave) {
             ui.btnSourceSave.addEventListener('click', function () {
-                var typeEl = null;
-                ui.sourceTypeRadios.forEach(function (r) {
-                    if (r.checked) typeEl = r;
-                });
-                var type = typeEl ? typeEl.value : 'video';
                 var id = ui.sourceInput.value.trim();
                 if (!id) return;
 
                 ui.btnSourceSave.textContent = '...';
                 ui.btnSourceSave.style.pointerEvents = 'none';
 
-                var apiUrl = type === 'video'
-                    ? '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1'
-                    : '/api/bilibili-collection?media_id=' + encodeURIComponent(id) + '&meta=1';
-                var midVal = ui.sourceMidInput ? ui.sourceMidInput.value.trim() : '';
-                if (type === 'playlist' && midVal) {
-                    apiUrl += '&mid=' + encodeURIComponent(midVal);
-                    try { localStorage.setItem('music-bilibili-mid', midVal); } catch (e) {}
-                }
+                var apiUrl = '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1';
 
                 fetch(apiUrl)
                     .then(function (r) { return r.json(); })
@@ -929,7 +841,7 @@ const widgetId =
                         var title = meta.title || id;
                         var artist = meta.artist || '';
                         var pic = meta.pic || meta.cover || '';
-                        mgr.addSavedSource(type, id, title, artist, pic, midVal || undefined);
+                        mgr.addSavedSource('video', id, title, artist, pic);
                         ui.sourceInput.value = '';
                     })
                     .catch(function (e) {
@@ -943,54 +855,27 @@ const widgetId =
             });
         }
 
-        // Render saved sources list (split: videos in "我的收藏", playlists in "我的合集")
-        var expandedPlaylistId = null;
-        var COLLAPSE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="m12 15.375l-6-6l1.4-1.4l4.6 4.6l4.6-4.6l1.4 1.4z"/></svg>';
-        var EXPAND_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M8.025 15.375L6.6 13.975l4.6-4.6l4.6 4.6l-1.425 1.4L11.2 11.2z"/></svg>';
+        // Render saved sources list
         var TRASH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"/></svg>';
 
         function renderSavedSources() {
-            if (!ui.savedVideoList || !ui.savedCollectionList) return;
+            if (!ui.savedVideoList) return;
 
             var sources = mgr.getSavedSources();
-            var videos = [];
-            var playlists = [];
-            for (var i = 0; i < sources.length; i++) {
-                if (sources[i].type === 'playlist') {
-                    playlists.push(sources[i]);
-                } else {
-                    videos.push(sources[i]);
-                }
+            var list = ui.savedVideoList;
+            while (list.children.length > 1) {
+                list.removeChild(list.lastChild);
             }
 
-            // ── Render videos ───────────────────────────────────
-            clearList(ui.savedVideoList);
-            if (videos.length === 0) {
+            if (sources.length === 0) {
                 ui.savedVideoEmpty.classList.remove('hidden');
-            } else {
-                ui.savedVideoEmpty.classList.add('hidden');
-                videos.forEach(function (src) {
-                    ui.savedVideoList.appendChild(buildVideoItem(src));
-                });
+                return;
             }
 
-            // ── Render collections ──────────────────────────────
-            clearList(ui.savedCollectionList);
-            if (playlists.length === 0) {
-                ui.savedCollectionEmpty.classList.remove('hidden');
-            } else {
-                ui.savedCollectionEmpty.classList.add('hidden');
-                playlists.forEach(function (src) {
-                    ui.savedCollectionList.appendChild(buildCollectionItem(src));
-                });
-            }
-        }
-
-        function clearList(container) {
-            if (!container) return;
-            while (container.firstChild) {
-                container.removeChild(container.firstChild);
-            }
+            ui.savedVideoEmpty.classList.add('hidden');
+            sources.forEach(function (src) {
+                list.appendChild(buildVideoItem(src));
+            });
         }
 
         function buildVideoItem(src) {
@@ -1015,131 +900,6 @@ const widgetId =
             item.addEventListener('click', function () {
                 closeSourceDrawer();
                 mgr.setBilibiliSource('video', src.id);
-            });
-            return item;
-        }
-
-        function buildCollectionItem(src) {
-            var wrapper = document.createElement('div');
-            wrapper.className = 'saved-collection-item';
-
-            var header = document.createElement('div');
-            header.className = 'flex items-center gap-2 p-1.5 rounded-md cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
-            header.title = src.title;
-
-            // Expand/collapse arrow
-            var arrow = document.createElement('span');
-            arrow.className = 'text-neutral-400 transition-transform duration-200 shrink-0';
-            arrow.innerHTML = EXPAND_ICON;
-
-            var info = document.createElement('div');
-            info.className = 'flex-1 min-w-0';
-            var titleEl = document.createElement('div');
-            titleEl.className = 'text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate';
-            titleEl.textContent = src.title || src.id;
-            var subEl = document.createElement('div');
-            subEl.className = 'text-[10px] text-neutral-400 truncate';
-            subEl.textContent = cfg.i18n.sourcePlaylist + ' · ' + src.id;
-            info.appendChild(titleEl);
-            info.appendChild(subEl);
-
-            var delBtn = buildDeleteBtn(src);
-            var playAllBtn = document.createElement('button');
-            playAllBtn.className = 'text-xs text-(--primary) hover:underline shrink-0 opacity-0 group-hover:opacity-100 transition-opacity';
-            playAllBtn.textContent = '▸ ' + cfg.i18n.sourcePlaylist;
-            playAllBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                closeSourceDrawer();
-                mgr.setBilibiliSource('playlist', src.id);
-            });
-
-            header.appendChild(arrow);
-            header.appendChild(info);
-            header.appendChild(playAllBtn);
-            header.appendChild(delBtn);
-
-            var trackContainer = document.createElement('div');
-            trackContainer.className = 'collection-tracks pl-4 hidden';
-            trackContainer.style.maxHeight = '0';
-            trackContainer.style.overflow = 'hidden';
-            trackContainer.style.transition = 'max-height 0.3s ease';
-
-            var loadingEl = document.createElement('div');
-            loadingEl.className = 'text-[10px] text-neutral-400 py-1';
-            loadingEl.textContent = '...';
-
-            header.addEventListener('click', function () {
-                if (trackContainer.classList.contains('hidden')) {
-                    // Expand
-                    expandedPlaylistId = src.id;
-                    trackContainer.classList.remove('hidden');
-                    arrow.innerHTML = COLLAPSE_ICON;
-                    trackContainer.innerHTML = '';
-                    trackContainer.appendChild(loadingEl);
-                    trackContainer.style.maxHeight = '500px';
-
-                    var mid = src.mid || '';
-                    var apiUrl = '/api/bilibili-collection?media_id=' + encodeURIComponent(src.id) + '&meta=1';
-                    if (mid) apiUrl += '&mid=' + encodeURIComponent(mid);
-
-                    fetch(apiUrl)
-                        .then(function (r) { return r.json(); })
-                        .then(function (meta) {
-                            trackContainer.innerHTML = '';
-                            if (meta.error) {
-                                var errEl = document.createElement('div');
-                                errEl.className = 'text-[10px] text-red-400 py-1';
-                                errEl.textContent = meta.error;
-                                trackContainer.appendChild(errEl);
-                                return;
-                            }
-                            var tracks = meta.tracks || [];
-                            tracks.forEach(function (t) {
-                                var tItem = buildTrackSubItem(t);
-                                trackContainer.appendChild(tItem);
-                            });
-                        })
-                        .catch(function (e) {
-                            trackContainer.innerHTML = '';
-                            var errEl = document.createElement('div');
-                            errEl.className = 'text-[10px] text-red-400 py-1';
-                            errEl.textContent = 'Failed to load: ' + (e.message || 'error');
-                            trackContainer.appendChild(errEl);
-                        });
-                } else {
-                    // Collapse
-                    expandedPlaylistId = null;
-                    trackContainer.classList.add('hidden');
-                    trackContainer.style.maxHeight = '0';
-                    arrow.innerHTML = EXPAND_ICON;
-                }
-            });
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(trackContainer);
-            return wrapper;
-        }
-
-        function buildTrackSubItem(track) {
-            var item = document.createElement('div');
-            item.className = 'flex items-center gap-2 py-1 px-1.5 rounded cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
-            item.title = track.title;
-
-            var info = document.createElement('div');
-            info.className = 'flex-1 min-w-0';
-            var titleEl = document.createElement('div');
-            titleEl.className = 'text-[11px] text-neutral-600 dark:text-neutral-300 truncate';
-            titleEl.textContent = track.title || track.bvid;
-            var subEl = document.createElement('div');
-            subEl.className = 'text-[9px] text-neutral-400 truncate';
-            subEl.textContent = (track.artist || '') + ' · ' + track.bvid;
-            info.appendChild(titleEl);
-            info.appendChild(subEl);
-
-            item.appendChild(info);
-            item.addEventListener('click', function () {
-                closeSourceDrawer();
-                mgr.setBilibiliSource('video', track.bvid);
             });
             return item;
         }

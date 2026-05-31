@@ -206,18 +206,10 @@ const managerConfigStr = JSON.stringify({
 
         // ── Layer 2: Bilibili 官方 API 获取真实音频流 ──────────
         try {
-            if (type === 'video') {
-                var tracks = await fetchBilibiliVideoTracks(id);
-                if (tracks.length > 0) {
-                    state.playlist = tracks;
-                    return;
-                }
-            } else if (type === 'playlist') {
-                var tracks = await fetchBilibiliCollectionTracks(id);
-                if (tracks.length > 0) {
-                    state.playlist = tracks;
-                    return;
-                }
+            var tracks = await fetchBilibiliVideoTracks(id);
+            if (tracks.length > 0) {
+                state.playlist = tracks;
+                return;
             }
         } catch (e) {
             console.warn('Bilibili official API fallback failed:', e);
@@ -263,16 +255,6 @@ const managerConfigStr = JSON.stringify({
             pic: meta.pic || '',
             lrc: ''
         }];
-    }
-
-    async function fetchBilibiliCollectionTracks(mediaId) {
-        if (!mediaId) return [];
-        var url = '/api/bilibili-collection?media_id=' + encodeURIComponent(mediaId);
-        var res = await fetch(url);
-        if (!res.ok) throw new Error('Collection proxy HTTP ' + res.status);
-        var data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return data.data || [];
     }
 
     // ── Lyrics ───────────────────────────────────────────────
@@ -493,7 +475,7 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
-    function addSavedSource(type, id, title, artist, pic, mid) {
+    function addSavedSource(type, id, title, artist, pic) {
         var list = getSavedSources();
         var found = false;
         for (var i = 0; i < list.length; i++) {
@@ -501,7 +483,6 @@ const managerConfigStr = JSON.stringify({
                 list[i].title = title;
                 list[i].artist = artist;
                 list[i].pic = pic;
-                if (mid) list[i].mid = mid;
                 list[i].savedAt = Date.now();
                 found = true;
                 break;
@@ -516,7 +497,6 @@ const managerConfigStr = JSON.stringify({
                 pic: pic || '',
                 savedAt: Date.now()
             };
-            if (mid) item.mid = mid;
             list.unshift(item);
         }
         try {

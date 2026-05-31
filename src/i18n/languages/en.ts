@@ -42,33 +42,17 @@ export const en: Translation = {
 	[Key.musicAudioPlayer]: "Audio Player",
 	[Key.musicSource]: "Source",
 	[Key.musicSourceVideo]: "Single Video",
-	[Key.musicSourcePlaylist]: "Collection",
 	[Key.musicSourceInputHint]: "Enter BV ID",
-	[Key.musicSourceInputHintPlaylist]: "Enter Collection ID (fid= from URL)",
 	[Key.musicSourceApply]: "Apply",
 	[Key.musicSourceCurrent]: "Current: {id}",
 	[Key.musicModeMeting]: "Online (Meting)",
 	[Key.musicModeLocal]: "Local",
 	[Key.musicModeBilibili]: "Bilibili",
 	[Key.musicSavedSources]: "Favorites",
-	[Key.musicMyCollections]: "Collections",
 	[Key.musicSave]: "Save",
 	[Key.musicRemoveSource]: "Remove",
 	[Key.musicNoSavedSources]:
 		"No saved sources yet. Enter a BV ID and click Save.",
-	[Key.musicCookie]: "Bilibili Cookie (login to access private collections)",
-	[Key.musicCookieHint]: "Paste SESSDATA value...",
-	[Key.musicCookieSave]: "Save",
-	[Key.musicCookieHelp]: "How to get?",
-	[Key.musicCookieHelpTitle]: "How to get Bilibili Cookie",
-	[Key.musicCookieHelpStep1]:
-		"Open bilibili.com in browser and log into your Bilibili account",
-	[Key.musicCookieHelpStep2]:
-		"Press F12 → Application → Cookies → bilibili.com",
-	[Key.musicCookieHelpStep3]:
-		"Find the SESSDATA row, double-click the Value column to select and copy",
-	[Key.musicCookieHelpNote]:
-		"Cookie is stored only in your local browser, never uploaded anywhere.\nRe-obtain and paste when it expires.",
 
 	// Announcement
 	[Key.announcement]: "Announcement",

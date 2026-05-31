@@ -42,34 +42,17 @@ export const ja: Translation = {
 	[Key.musicAudioPlayer]: "オーディオプレーヤー",
 	[Key.musicSource]: "音源",
 	[Key.musicSourceVideo]: "単一動画",
-	[Key.musicSourcePlaylist]: "コレクション",
 	[Key.musicSourceInputHint]: "BV番号を入力",
-	[Key.musicSourceInputHintPlaylist]: "コレクションID（URLのfid=の値）",
 	[Key.musicSourceApply]: "適用",
 	[Key.musicSourceCurrent]: "現在：{id}",
 	[Key.musicModeMeting]: "オンライン (Meting)",
 	[Key.musicModeLocal]: "ローカル",
 	[Key.musicModeBilibili]: "Bilibili",
 	[Key.musicSavedSources]: "お気に入り",
-	[Key.musicMyCollections]: "コレクション",
 	[Key.musicSave]: "保存",
 	[Key.musicRemoveSource]: "削除",
 	[Key.musicNoSavedSources]:
 		"まだ保存されていません。BV番号を入力して保存してください。",
-	[Key.musicCookie]:
-		"Bilibili Cookie（ログインでプライベートコレクションにアクセス可）",
-	[Key.musicCookieHint]: "SESSDATA の値を貼り付け...",
-	[Key.musicCookieSave]: "保存",
-	[Key.musicCookieHelp]: "取得方法は？",
-	[Key.musicCookieHelpTitle]: "Bilibili Cookie の取得方法",
-	[Key.musicCookieHelpStep1]:
-		"ブラウザで bilibili.com を開き、Bilibili アカウントにログイン",
-	[Key.musicCookieHelpStep2]:
-		"F12 → アプリケーション/Application → Cookies → bilibili.com",
-	[Key.musicCookieHelpStep3]:
-		"SESSDATA の行を見つけ、Value 列をダブルクリックしてコピー",
-	[Key.musicCookieHelpNote]:
-		"Cookie はブラウザ内にのみ保存され、サーバーには送信されません。\n期限切れ後は再取得して貼り付けてください。",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",
