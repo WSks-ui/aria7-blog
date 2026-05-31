@@ -122,7 +122,7 @@ var state = {
 
 ![播放器控制区域：进度条、音量、播放/暂停、列表/歌词抽屉](/assets/images/posts/B站音乐播放器/player-controls.png)
 
-![完整的播放器展开状态：播放列表和音源面板](/assets/images/posts/B站音乐播放器/full-player.png)
+<img src="/assets/images/posts/B站音乐播放器/full-player.png" alt="完整的播放器展开状态：播放列表和音源面板" style="max-height: 600px; width: 100%; object-fit: contain; border-radius: 8px;" />
 
 ---
 
