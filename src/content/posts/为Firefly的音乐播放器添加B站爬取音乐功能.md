@@ -2,16 +2,16 @@
 title: 为 Firefly 的音乐播放器添加 B站爬取音乐功能
 published: 2026-05-31
 description: 从零开始，给博客音乐播放器加上 Bilibili 音频爬取、自建播放列表、多曲目队列的完整历程
-image: "https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=a%20minimalist%20modern%20blog%20music%20player%20widget%20floating%20over%20a%20dark%20gradient%20background%20with%20bilibili%20pinkish%20color%20accents%2C%20vinyl%20disc%20with%20play%20button%2C%20playlist%20interface%2C%20sleek%20glassmorphism%20design%2C%20code%20snippets%20faintly%20overlayed%20in%20the%20background%2C%20futuristic%20tech%20blog%20aesthetic&image_size=landscape_16_9"
+image: "/assets/images/posts/B站音乐播放器/cover.png"
 tags: ["Astro", "Firefly", "音乐播放器", "Bilibili", "JavaScript", "博客"]
 category: "技术"
 ---
 
 ## 说在前头
 
-我的博客用的是 [Firefly](https://github.com/skylie/firefly) 主题，自带一个挺好看的音乐播放器。默认支持两种模式：**Meting API 在线音乐**和**本地音乐**。但一直有个遗憾 —— 播放器不支持 Bilibili。
+我的博客用的是 [Firefly](https://github.com/skylie/firefly) 主题，自带一个挺好看的音乐播放器。默认支持两种模式：**Meting API 在线音乐**和**本地音乐**。但一直有个遗憾 -- 播放器不支持 Bilibili。
 
-作为一个重度 B站用户，经常听到好听的 BGM 想收藏到博客里。如果能直接在博客的播放器里播 B站视频的音频，那该多好 (´▽\`ʃ♡ƪ)
+作为一个重度 B站用户，经常听到好听的 BGM 想收藏到博客里。如果能直接在博客的播放器里播 B站视频的音频，那该多好。
 
 于是我开始了漫长的魔改之路...
 
@@ -174,19 +174,19 @@ Layer 2: B站官方 API（通过代理）
 
 ```
 ┌── 音源面板 ────────────────────────────────┐
-│ 输入 BV 号 + [应用] → 播放单个视频           │
-│ 输入 BV 号 + [收藏] → 保存到收藏            │
+│ 输入 BV 号 + [应用] -> 播放单个视频           │
+│ 输入 BV 号 + [收藏] -> 保存到收藏            │
 │                                             │
-│ 📋 我的收藏                                   │
-│ 🎵 视频1  [+] [🗑]   ← [+] 添加到列表        │
-│ 🎵 视频2  [+] [🗑]                           │
+│ [收藏] 我的收藏                               │
+│ 视频1  [+] [删除]   <- [+] 添加到列表         │
+│ 视频2  [+] [删除]                           │
 │                                             │
-│ 📂 自建播放列表                                │
-│ ┌ 输入名称 ────┐ [新建]                       │
-│ ▸ 日推 (3首)      ▸全部播放 [🗑]              │
-│   ├ BV1xxx · 曲目1  [+] [🗑]                 │
-│   ├ BV2xxx · 曲目2  [+] [🗑]                 │
-│   └ BV3xxx · 曲目3  [+] [🗑]                 │
+│ [列表] 自建播放列表                            │
+│ [输入名称 ----] [新建]                       │
+│ > 日推 (3首)      >全部播放 [删除]            │
+│   - BV1xxx . 曲目1  [+] [删除]              │
+│   - BV2xxx . 曲目2  [+] [删除]              │
+│   - BV3xxx . 曲目3  [+] [删除]              │
 └──────────────────────────────────────────────┘
 ```
 
@@ -213,7 +213,7 @@ async function addToBilibiliQueue(bvid) {
 }
 ```
 
-这样用户就可以从不同播放列表里挑选曲目，拼接成自己的专属播放队列了。配合播放器的**列表循环/单曲循环/随机播放**三种模式，体验还不错 ヾ(◍°∇°◍)ﾉﾞ
+这样用户就可以从不同播放列表里挑选曲目，拼接成自己的专属播放队列了。配合播放器的**列表循环/单曲循环/随机播放**三种模式，体验还不错。
 
 ---
 
@@ -261,15 +261,15 @@ var observer = new MutationObserver(function (mutations) {
 
 | 功能 | 说明 |
 |------|------|
-| 🎵 B站视频播放 | 输入 BV 号，代理获取音频流 |
-| 📥 视频收藏 | 保存喜欢的视频到本地 |
-| 📂 自建播放列表 | 创建分类歌单，管理视频 |
-| ▶️ 全部播放 | 一键加载整个列表到队列 |
-| ➕ 追加到队列 | 从列表中挑选曲目拼接播放 |
-| 🔁 播放模式 | 列表循环 / 单曲循环 / 随机 |
-| 📝 歌词展示 | 支持 B站视频歌词加载 |
-| 📡 多层降级 | 第三方 API → 官方 API 自动切换 |
+| B站视频播放 | 输入 BV 号，代理获取音频流 |
+| 视频收藏 | 保存喜欢的视频到本地 |
+| 自建播放列表 | 创建分类歌单，管理视频 |
+| 全部播放 | 一键加载整个列表到队列 |
+| 追加到队列 | 从列表中挑选曲目拼接播放 |
+| 播放模式 | 列表循环 / 单曲循环 / 随机 |
+| 歌词展示 | 支持 B站视频歌词加载 |
+| 多层降级 | 第三方 API -> 官方 API 自动切换 |
 
-代码托管在 [GitHub](https://github.com/WSks-ui/aria7-blog) 上，欢迎指教和 Star ⭐
+代码托管在 [GitHub](https://github.com/WSks-ui/aria7-blog) 上，欢迎指教和 Star。
 
-如果你也在用 Firefly，希望这篇博客能给你一些魔改的灵感 (◍•ᴗ•◍)✧
+如果你也在用 Firefly，希望这篇博客能给你一些魔改的灵感。
