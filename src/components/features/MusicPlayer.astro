@@ -1001,9 +1001,10 @@ const widgetId =
                 e.stopPropagation();
             });
         }
-        document.addEventListener('click', function () {
+        var popupDocHandler = function () {
             hideAddToPlaylistPopup();
-        }, true);
+        };
+        document.addEventListener('click', popupDocHandler, true);
 
         // ── Custom Playlists ─────────────────────────────────
         var playlistCreateInput = widget.querySelector('.playlist-create-input');
@@ -1251,10 +1252,10 @@ const widgetId =
             var removed = mutations[i].removedNodes;
             for (var j = 0; j < removed.length; j++) {
                 if (removed[j] === widget || (removed[j].contains && removed[j].contains(widget))) {
-                    // Widget removed from DOM – clean up event listeners
                     Object.keys(handlers).forEach(function (name) {
                         window.removeEventListener(name, handlers[name]);
                     });
+                    document.removeEventListener('click', popupDocHandler, true);
                     observer.disconnect();
                     clearTimeout(local.scrollTimeout);
                     return;
