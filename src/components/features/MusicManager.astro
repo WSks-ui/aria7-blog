@@ -463,6 +463,91 @@ const managerConfigStr = JSON.stringify({
         await init();
     }
 
+    async function setBilibiliPlaylist(bvids) {
+        if (!bvids || bvids.length === 0) return;
+
+        // Save to localStorage
+        try {
+            localStorage.setItem('music-bilibili-type', 'playlist');
+            localStorage.setItem('music-bilibili-id', bvids[0]);
+        } catch (e) {}
+
+        if (!config.bilibili) config.bilibili = {};
+        config.bilibili.type = 'playlist';
+        config.bilibili.id = bvids[0];
+
+        state.initialized = false;
+        state.initializing = false;
+        state.playlist = [];
+        state.currentIndex = 0;
+        state.lyrics = [];
+        state.currentLrcIndex = -1;
+
+        audio.pause();
+        audio.src = '';
+        state.isPlaying = false;
+
+        emit('fm:loading', { loading: true });
+
+        var tracks = [];
+        var limits = bvids.slice(0, 20);
+        for (var i = 0; i < limits.length; i++) {
+            try {
+                var t = await fetchBilibiliVideoTracks(limits[i]);
+                if (t.length > 0) tracks.push(t[0]);
+            } catch (e) {
+                tracks.push({
+                    name: limits[i],
+                    artist: '',
+                    url: '/api/bilibili-audio?bvid=' + limits[i],
+                    pic: '',
+                    lrc: ''
+                });
+            }
+        }
+
+        if (tracks.length === 0) {
+            state.initialized = true;
+            state.error = 'Failed to load any track';
+            emit('fm:error', { error: state.error });
+            return;
+        }
+
+        state.playlist = tracks;
+        state.initialized = true;
+        state.error = null;
+
+        emit('fm:init', {
+            playlist: state.playlist,
+            currentIndex: 0,
+            isPlaying: false,
+            config: config
+        });
+
+        emit('fm:loading', { loading: false });
+        loadTrack(0, true);
+    }
+
+    async function addToBilibiliQueue(bvid) {
+        if (!bvid) return;
+        try {
+            var t = await fetchBilibiliVideoTracks(bvid);
+            if (t.length === 0) return;
+            state.playlist.push(t[0]);
+            emit('fm:queue-updated', { playlist: state.playlist });
+        } catch (e) {
+            var track = {
+                name: bvid,
+                artist: '',
+                url: '/api/bilibili-audio?bvid=' + bvid,
+                pic: '',
+                lrc: ''
+            };
+            state.playlist.push(track);
+            emit('fm:queue-updated', { playlist: state.playlist });
+        }
+    }
+
     // ── Saved sources (user's custom Bilibili list) ─────────
     var SAVED_KEY = 'music-saved-sources';
 
@@ -753,6 +838,8 @@ const managerConfigStr = JSON.stringify({
         seekToTime: seekToTime,
         playTrackByIndex: playTrackByIndex,
         setBilibiliSource: setBilibiliSource,
+        setBilibiliPlaylist: setBilibiliPlaylist,
+        addToBilibiliQueue: addToBilibiliQueue,
         setMode: setMode,
         getSavedSources: getSavedSources,
         addSavedSource: addSavedSource,

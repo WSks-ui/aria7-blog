@@ -1110,6 +1110,13 @@ const widgetId =
             arrow.innerHTML = EXPAND_ICON;
         }
 
+        function playPlaylistTracks(pl) {
+            if (pl.tracks.length === 0) return;
+            closeSourceDrawer();
+            var bvids = pl.tracks.map(function (t) { return t.bvid; });
+            mgr.setBilibiliPlaylist(bvids);
+        }
+
         function buildTrackSubItem(track, plId) {
             var item = document.createElement('div');
             item.className = 'flex items-center gap-2 py-1 px-1.5 rounded cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
@@ -1125,6 +1132,15 @@ const widgetId =
             info.appendChild(titleEl);
             info.appendChild(subEl);
 
+            var addBtn = document.createElement('button');
+            addBtn.className = 'text-neutral-400 hover:text-(--primary) transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
+            addBtn.innerHTML = PLUS_ICON;
+            addBtn.setAttribute('aria-label', cfg.i18n.addToPlaylist);
+            addBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                mgr.addToBilibiliQueue(track.bvid);
+            });
+
             var removeBtn = document.createElement('button');
             removeBtn.className = 'text-neutral-400 hover:text-red-500 transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
             removeBtn.innerHTML = TRASH_ICON;
@@ -1135,25 +1151,15 @@ const widgetId =
             });
 
             item.appendChild(info);
+            item.appendChild(addBtn);
             item.appendChild(removeBtn);
-            item.addEventListener('click', function () {
+            item.addEventListener('click', function (e) {
+                // Click on the row: add to queue
                 closeSourceDrawer();
-                mgr.setBilibiliSource('video', track.bvid);
+                mgr.addToBilibiliQueue(track.bvid);
             });
             return item;
         }
-
-        function playPlaylistTracks(pl) {
-            if (pl.tracks.length === 0) return;
-            closeSourceDrawer();
-            // Set the first track and let init flow handle it
-            mgr.setBilibiliSource('video', pl.tracks[0].bvid);
-            // The playlist will only have one track from bilibili. 
-            // For full playlist playback, we queue all tracks.
-            // Since bilibili mode only supports single track, play first one.
-        }
-
-        // Create playlist button
         if (playlistCreateBtn && playlistCreateInput) {
             playlistCreateBtn.addEventListener('click', function () {
                 var name = playlistCreateInput.value.trim();
@@ -1186,6 +1192,11 @@ const widgetId =
         // Listen for saved sources updates
         on('fm:saved-sources', function () {
             renderSavedSources();
+        });
+
+        on('fm:queue-updated', function (e) {
+            var s = mgr.getState();
+            renderPlaylist(e.detail.playlist, s.currentIndex);
         });
 
         function closeSourceDrawer() {
