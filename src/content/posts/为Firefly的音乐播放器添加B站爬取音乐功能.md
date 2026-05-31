@@ -2,7 +2,7 @@
 title: 为 Firefly 的音乐播放器添加 B站爬取音乐功能
 published: 2026-05-31
 description: 从零开始，给博客音乐播放器加上 Bilibili 音频爬取、自建播放列表、多曲目队列的完整历程
-image: "/assets/images/posts/B站音乐播放器/cover.png"
+image: "/assets/images/posts/B站音乐播放器/full-player.png"
 tags: ["Astro", "Firefly", "音乐播放器", "Bilibili", "JavaScript", "博客"]
 category: "技术"
 ---
