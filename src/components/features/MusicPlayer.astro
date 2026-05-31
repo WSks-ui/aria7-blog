@@ -30,10 +30,8 @@ const viewConfigStr = JSON.stringify({
 		music: i18n(I18nKey.music),
 		source: i18n(I18nKey.musicSource),
 		sourceVideo: i18n(I18nKey.musicSourceVideo),
-		sourcePlaylist: i18n(I18nKey.musicSourcePlaylist),
 		sourceApply: i18n(I18nKey.musicSourceApply),
 		sourceInputHint: i18n(I18nKey.musicSourceInputHint),
-		sourceInputHintPlaylist: i18n(I18nKey.musicSourceInputHintPlaylist),
 		sourceCurrent: i18n(I18nKey.musicSourceCurrent),
 		modeMeting: i18n(I18nKey.musicModeMeting),
 		modeLocal: i18n(I18nKey.musicModeLocal),
@@ -44,6 +42,11 @@ const viewConfigStr = JSON.stringify({
 		removeSource: i18n(I18nKey.musicRemoveSource),
 		noSavedSources: i18n(I18nKey.musicNoSavedSources),
 		playAll: i18n(I18nKey.musicPlayAll),
+		newPlaylist: i18n(I18nKey.musicNewPlaylist),
+		playlistHint: i18n(I18nKey.musicPlaylistHint),
+		createPlaylist: i18n(I18nKey.musicCreatePlaylist),
+		addToPlaylist: i18n(I18nKey.musicAddToPlaylist),
+		removeFromPlaylist: i18n(I18nKey.musicRemoveFromPlaylist),
 	},
 });
 
@@ -176,7 +179,7 @@ const widgetId =
 </div>
 
 <!-- Source Drawer (mode selector + source config) -->
-<div class="source-drawer grid transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid-rows-[0fr] opacity-0">
+<div class="source-drawer grid transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] grid-rows-[0fr] opacity-0 relative">
     <div class="overflow-hidden min-h-0">
         <div class="mt-2 pt-2 border-t border-neutral-100 dark:border-white/5 mx-1">
             <div class="px-1 pb-2 flex flex-col gap-3">
@@ -205,20 +208,6 @@ const widgetId =
                 <!-- Bilibili config section -->
                 <div class="source-bilibili-section flex flex-col gap-3">
                     <div class="h-px bg-neutral-100 dark:bg-white/5"></div>
-
-                    <!-- Type selector -->
-                    <div class="flex gap-2">
-                        <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
-                            <input type="radio" name={`source-type-${widgetId}`} value="video" class="hidden" checked />
-                            <Icon name="material-symbols:video-library-rounded" class="text-sm shrink-0" aria-hidden="true" />
-                            {i18n(I18nKey.musicSourceVideo)}
-                        </label>
-                        <label class="source-type-label flex-1 flex items-center gap-1.5 px-3 py-1.5 rounded-lg cursor-pointer border border-neutral-200 dark:border-neutral-700 text-xs font-medium transition-colors has-checked:bg-(--primary) has-checked:text-white has-checked:border-(--primary)">
-                            <input type="radio" name={`source-type-${widgetId}`} value="playlist" class="hidden" />
-                            <Icon name="material-symbols:playlist-play-rounded" class="text-sm shrink-0" aria-hidden="true" />
-                            {i18n(I18nKey.musicSourcePlaylist)}
-                        </label>
-                    </div>
 
                     <!-- Input field -->
                     <div class="flex gap-2">
@@ -251,10 +240,22 @@ const widgetId =
                         <div class="text-xs font-medium text-neutral-500 mb-1.5">
                             {i18n(I18nKey.musicMyCollections)}
                         </div>
+                        <div class="flex gap-2 mb-2">
+                            <input type="text" class="playlist-create-input flex-1 px-3 py-1.5 text-xs rounded-lg border border-neutral-200 dark:border-neutral-700 bg-transparent focus:outline-none focus:border-(--primary) transition-colors placeholder:text-neutral-400" placeholder={i18n(I18nKey.musicPlaylistHint)} />
+                            <button class="btn-playlist-create px-3 py-1.5 text-xs font-medium rounded-lg bg-(--primary)/10 text-(--primary) hover:bg-(--primary)/20 transition-all active:scale-95 shrink-0" type="button">
+                                {i18n(I18nKey.musicCreatePlaylist)}
+                            </button>
+                        </div>
                         <div class="saved-sources-list-collection flex flex-col gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
                             <div class="saved-sources-empty-collection text-[10px] text-neutral-400 leading-relaxed">
                             </div>
                         </div>
+                    </div>
+
+                    <!-- Add-to-playlist popup -->
+                    <div class="add-to-playlist-popup hidden absolute z-30 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-lg shadow-lg p-2 min-w-[160px]">
+                        <div class="text-[10px] text-neutral-400 mb-1.5 px-1">{i18n(I18nKey.musicAddToPlaylist)}</div>
+                        <div class="add-to-playlist-list flex flex-col gap-0.5 max-h-32 overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
@@ -335,7 +336,6 @@ const widgetId =
         sourceDrawer: widget.querySelector('.source-drawer'),
         sourceInput: widget.querySelector('.source-input'),
         btnSourceApply: widget.querySelector('.btn-source-apply'),
-        sourceTypeRadios: widget.querySelectorAll('input[name="source-type-' + widgetId + '"]'),
         modeRadios: widget.querySelectorAll('input[name="music-mode-' + widgetId + '"]'),
         bilibiliSection: widget.querySelector('.source-bilibili-section'),
         btnSourceSave: widget.querySelector('.btn-source-save'),
@@ -437,8 +437,7 @@ const widgetId =
         };
         var label = modeLabels[mode] || mode;
         if (mode === 'bilibili' && s.config.bilibili && s.config.bilibili.id) {
-            var typeLabel = s.config.bilibili.type === 'playlist' ? cfg.i18n.sourcePlaylist : cfg.i18n.sourceVideo;
-            ui.currentSource.innerText = label + ' · ' + typeLabel + ' ' + s.config.bilibili.id;
+            ui.currentSource.innerText = label + ' · ' + s.config.bilibili.id;
         } else {
             ui.currentSource.innerText = label;
         }
@@ -803,15 +802,11 @@ const widgetId =
 
                 // Load saved sources list
                 mgr.broadcastSavedSources();
+                mgr.broadcastPlaylists();
 
                 // Pre-fill bilibili input if applicable
                 if (currentMode === 'bilibili' && s && s.config && s.config.bilibili) {
                     ui.sourceInput.value = s.config.bilibili.id || '';
-                    var savedType = s.config.bilibili.type || 'video';
-                    ui.sourceTypeRadios.forEach(function (r) {
-                        r.checked = r.value === savedType;
-                    });
-                    updateInputPlaceholder();
                 }
 
                 ui.sourceDrawer.style.gridTemplateRows = '1fr';
@@ -834,28 +829,6 @@ const widgetId =
             }
         }
 
-        function updateInputPlaceholder() {
-            if (!ui.sourceInput) return;
-            var isPlaylist = getSelectedType() === 'playlist';
-            ui.sourceInput.placeholder = isPlaylist
-                ? cfg.i18n.sourceInputHintPlaylist
-                : cfg.i18n.sourceInputHint;
-        }
-
-        function getSelectedType() {
-            var type = 'video';
-            ui.sourceTypeRadios.forEach(function (r) {
-                if (r.checked) type = r.value;
-            });
-            return type;
-        }
-
-        ui.sourceTypeRadios.forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                updateInputPlaceholder();
-            });
-        });
-
         // Mode radio change → switch mode
         ui.modeRadios.forEach(function (radio) {
             radio.addEventListener('change', function () {
@@ -870,32 +843,25 @@ const widgetId =
         ui.btnSourceApply.addEventListener('click', function () {
             var id = ui.sourceInput.value.trim();
             if (!id) return;
-            var type = getSelectedType();
             closeSourceDrawer();
-            mgr.setBilibiliSource(type, id);
+            mgr.setBilibiliSource('video', id);
         });
 
         // Bilibili source save
         if (ui.btnSourceSave) {
             ui.btnSourceSave.addEventListener('click', function () {
-                var type = getSelectedType();
                 var id = ui.sourceInput.value.trim();
                 if (!id) return;
 
                 ui.btnSourceSave.textContent = '...';
                 ui.btnSourceSave.style.pointerEvents = 'none';
 
-                var apiUrl = type === 'video'
-                    ? '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1'
-                    : '/api/bilibili-collection?media_id=' + encodeURIComponent(id) + '&meta=1';
-
+                var apiUrl = '/api/bilibili-audio?bvid=' + encodeURIComponent(id) + '&meta=1';
                 fetch(apiUrl)
                     .then(function (r) { return r.json(); })
                     .then(function (meta) {
                         if (meta.error) throw new Error(meta.error);
-                        var title = meta.title || id;
-                        var cover = meta.cover || '';
-                        mgr.addSavedSource(type, id, title, type === 'playlist' ? '' : (meta.artist || ''), cover);
+                        mgr.addSavedSource('video', id, meta.title || id, meta.artist || '', meta.pic || meta.cover || '');
                         ui.sourceInput.value = '';
                     })
                     .catch(function (e) {
@@ -909,45 +875,28 @@ const widgetId =
             });
         }
 
-        // Render saved sources list (split: videos in "我的收藏", collections in "我的合集")
-        var expandedCollectionId = null;
+        // ── Icons ────────────────────────────────────────────
+        var TRASH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"/></svg>';
         var COLLAPSE_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="m12 15.375l-6-6l1.4-1.4l4.6 4.6l4.6-4.6l1.4 1.4z"/></svg>';
         var EXPAND_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"><path fill="currentColor" d="M8.025 15.375L6.6 13.975l4.6-4.6l4.6 4.6l-1.425 1.4L11.2 11.2z"/></svg>';
-        var TRASH_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M7 21q-.825 0-1.412-.587T5 19V6H4V4h5V3h6v1h5v2h-1v13q0 .825-.587 1.413T17 21zM17 6H7v13h10zM9 17h2V8H9zm4 0h2V8h-2zM7 6v13z"/></svg>';
+        var PLUS_ICON = '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"><path fill="currentColor" d="M11 13H5v-2h6V5h2v6h6v2h-6v6h-2z"/></svg>';
+        var expandedPlaylistId = null;
 
         function renderSavedSources() {
             if (!ui.savedVideoList || !ui.savedCollectionList) return;
 
             var sources = mgr.getSavedSources();
-            var videos = [];
-            var playlists = [];
-            for (var i = 0; i < sources.length; i++) {
-                if (sources[i].type === 'playlist') {
-                    playlists.push(sources[i]);
-                } else {
-                    videos.push(sources[i]);
-                }
-            }
-
             clearList(ui.savedVideoList);
-            if (videos.length === 0) {
+            if (sources.length === 0) {
                 ui.savedVideoEmpty.classList.remove('hidden');
             } else {
                 ui.savedVideoEmpty.classList.add('hidden');
-                videos.forEach(function (src) {
+                sources.forEach(function (src) {
                     ui.savedVideoList.appendChild(buildVideoItem(src));
                 });
             }
 
-            clearList(ui.savedCollectionList);
-            if (playlists.length === 0) {
-                ui.savedCollectionEmpty.classList.remove('hidden');
-            } else {
-                ui.savedCollectionEmpty.classList.add('hidden');
-                playlists.forEach(function (src) {
-                    ui.savedCollectionList.appendChild(buildCollectionItem(src));
-                });
-            }
+            renderPlaylists();
         }
 
         function clearList(container) {
@@ -973,139 +922,22 @@ const widgetId =
             info.appendChild(titleEl);
             info.appendChild(subEl);
 
+            var addBtn = document.createElement('button');
+            addBtn.className = 'text-neutral-400 hover:text-(--primary) transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
+            addBtn.setAttribute('aria-label', cfg.i18n.addToPlaylist);
+            addBtn.innerHTML = PLUS_ICON;
+            addBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                showAddToPlaylistPopup(addBtn, src);
+            });
+
             var delBtn = buildDeleteBtn(src);
             item.appendChild(info);
+            item.appendChild(addBtn);
             item.appendChild(delBtn);
             item.addEventListener('click', function () {
                 closeSourceDrawer();
                 mgr.setBilibiliSource('video', src.id);
-            });
-            return item;
-        }
-
-        function buildCollectionItem(src) {
-            var wrapper = document.createElement('div');
-            wrapper.className = 'saved-collection-item';
-
-            var header = document.createElement('div');
-            header.className = 'flex items-center gap-2 p-1.5 rounded-md cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
-            header.title = src.title;
-
-            var arrow = document.createElement('span');
-            arrow.className = 'text-neutral-400 transition-transform duration-200 shrink-0';
-            arrow.innerHTML = EXPAND_ICON;
-
-            var info = document.createElement('div');
-            info.className = 'flex-1 min-w-0';
-            var titleEl = document.createElement('div');
-            titleEl.className = 'text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate';
-            titleEl.textContent = src.title || src.id;
-            var subEl = document.createElement('div');
-            subEl.className = 'text-[10px] text-neutral-400 truncate';
-            subEl.textContent = cfg.i18n.sourcePlaylist + ' · ' + src.id;
-            info.appendChild(titleEl);
-            info.appendChild(subEl);
-
-            var delBtn = buildDeleteBtn(src);
-            var playAllBtn = document.createElement('button');
-            playAllBtn.className = 'text-xs text-(--primary) hover:underline shrink-0 opacity-0 group-hover:opacity-100 transition-opacity';
-            playAllBtn.textContent = '▸ ' + cfg.i18n.playAll;
-            playAllBtn.addEventListener('click', function (e) {
-                e.stopPropagation();
-                closeSourceDrawer();
-                mgr.setBilibiliSource('playlist', src.id);
-            });
-
-            header.appendChild(arrow);
-            header.appendChild(info);
-            header.appendChild(playAllBtn);
-            header.appendChild(delBtn);
-
-            var trackContainer = document.createElement('div');
-            trackContainer.className = 'collection-tracks pl-4 hidden overflow-hidden';
-            trackContainer.style.transition = 'max-height 0.3s ease';
-
-            var loadingEl = document.createElement('div');
-            loadingEl.className = 'text-[10px] text-neutral-400 py-1';
-            loadingEl.textContent = '...';
-
-            header.addEventListener('click', function () {
-                if (trackContainer.classList.contains('hidden')) {
-                    expandCollection(src, trackContainer, arrow, loadingEl);
-                } else {
-                    collapseCollection(trackContainer, arrow);
-                }
-            });
-
-            wrapper.appendChild(header);
-            wrapper.appendChild(trackContainer);
-            return wrapper;
-        }
-
-        function expandCollection(src, trackContainer, arrow, loadingEl) {
-            expandedCollectionId = src.id;
-            trackContainer.classList.remove('hidden');
-            trackContainer.style.maxHeight = '500px';
-            arrow.innerHTML = COLLAPSE_ICON;
-            trackContainer.innerHTML = '';
-            trackContainer.appendChild(loadingEl);
-
-            var apiUrl = '/api/bilibili-collection?media_id=' + encodeURIComponent(src.id) + '&meta=1';
-            fetch(apiUrl)
-                .then(function (r) { return r.json(); })
-                .then(function (meta) {
-                    if (src.id !== expandedCollectionId) return;
-                    trackContainer.innerHTML = '';
-                    if (meta.error) {
-                        showError(trackContainer, meta.error);
-                        return;
-                    }
-                    var tracks = meta.tracks || [];
-                    tracks.forEach(function (t) {
-                        trackContainer.appendChild(buildTrackSubItem(t));
-                    });
-                })
-                .catch(function (e) {
-                    if (src.id !== expandedCollectionId) return;
-                    trackContainer.innerHTML = '';
-                    showError(trackContainer, 'Failed to load: ' + (e.message || 'error'));
-                });
-        }
-
-        function collapseCollection(trackContainer, arrow) {
-            expandedCollectionId = null;
-            trackContainer.classList.add('hidden');
-            trackContainer.style.maxHeight = '0';
-            arrow.innerHTML = EXPAND_ICON;
-        }
-
-        function showError(container, msg) {
-            var errEl = document.createElement('div');
-            errEl.className = 'text-[10px] text-red-400 py-1';
-            errEl.textContent = msg;
-            container.appendChild(errEl);
-        }
-
-        function buildTrackSubItem(track) {
-            var item = document.createElement('div');
-            item.className = 'flex items-center gap-2 py-1 px-1.5 rounded cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
-            item.title = track.title;
-
-            var info = document.createElement('div');
-            info.className = 'flex-1 min-w-0';
-            var titleEl = document.createElement('div');
-            titleEl.className = 'text-[11px] text-neutral-600 dark:text-neutral-300 truncate';
-            titleEl.textContent = track.title || track.bvid;
-            var subEl = document.createElement('div');
-            subEl.className = 'text-[9px] text-neutral-400 truncate';
-            subEl.textContent = (track.artist || '') + ' · ' + track.bvid;
-            info.appendChild(titleEl);
-            info.appendChild(subEl);
-
-            item.appendChild(info);
-            item.addEventListener('click', function () {
-                closeSourceDrawer();
-                mgr.setBilibiliSource('video', track.bvid);
             });
             return item;
         }
@@ -1121,6 +953,228 @@ const widgetId =
             });
             return delBtn;
         }
+
+        // ── Add-to-playlist popup ────────────────────────────
+        var popupEl = widget.querySelector('.add-to-playlist-popup');
+        var popupListEl = widget.querySelector('.add-to-playlist-list');
+        var currentPopupSource = null;
+
+        function showAddToPlaylistPopup(anchorBtn, src) {
+            if (!popupEl || !popupListEl) return;
+            currentPopupSource = src;
+
+            popupListEl.innerHTML = '';
+            var playlists = mgr.getPlaylists();
+            if (playlists.length === 0) {
+                var emptyEl = document.createElement('div');
+                emptyEl.className = 'text-[10px] text-neutral-400 py-1 px-1';
+                emptyEl.textContent = cfg.i18n.playlistHint;
+                popupListEl.appendChild(emptyEl);
+            } else {
+                playlists.forEach(function (pl) {
+                    var row = document.createElement('button');
+                    row.className = 'text-xs text-left px-1.5 py-1 rounded hover:bg-neutral-100 dark:hover:bg-white/10 transition-colors text-neutral-700 dark:text-neutral-200';
+                    row.textContent = pl.name;
+                    row.addEventListener('click', function () {
+                        mgr.addToPlaylist(pl.id, src.id, src.title, src.artist, src.pic);
+                        hideAddToPlaylistPopup();
+                    });
+                    popupListEl.appendChild(row);
+                });
+            }
+
+            var rect = anchorBtn.getBoundingClientRect();
+            var drawerRect = ui.sourceDrawer.getBoundingClientRect();
+            popupEl.style.top = (rect.bottom - drawerRect.top + 4) + 'px';
+            popupEl.style.left = Math.max(8, rect.right - drawerRect.left - 160) + 'px';
+            popupEl.classList.remove('hidden');
+        }
+
+        function hideAddToPlaylistPopup() {
+            if (!popupEl) return;
+            popupEl.classList.add('hidden');
+            currentPopupSource = null;
+        }
+
+        if (popupEl) {
+            popupEl.addEventListener('click', function (e) {
+                e.stopPropagation();
+            });
+        }
+        document.addEventListener('click', function () {
+            hideAddToPlaylistPopup();
+        }, true);
+
+        // ── Custom Playlists ─────────────────────────────────
+        var playlistCreateInput = widget.querySelector('.playlist-create-input');
+        var playlistCreateBtn = widget.querySelector('.btn-playlist-create');
+
+        function renderPlaylists() {
+            if (!ui.savedCollectionList) return;
+            clearList(ui.savedCollectionList);
+            var playlists = mgr.getPlaylists();
+            if (playlists.length === 0) {
+                ui.savedCollectionEmpty.classList.remove('hidden');
+                ui.savedCollectionEmpty.textContent = cfg.i18n.playlistHint;
+            } else {
+                ui.savedCollectionEmpty.classList.add('hidden');
+                playlists.forEach(function (pl) {
+                    ui.savedCollectionList.appendChild(buildPlaylistItem(pl));
+                });
+            }
+        }
+
+        function buildPlaylistItem(pl) {
+            var wrapper = document.createElement('div');
+            wrapper.className = 'saved-collection-item';
+
+            var header = document.createElement('div');
+            header.className = 'flex items-center gap-2 p-1.5 rounded-md cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
+            header.title = pl.name;
+
+            var arrow = document.createElement('span');
+            arrow.className = 'text-neutral-400 transition-transform duration-200 shrink-0';
+            arrow.innerHTML = EXPAND_ICON;
+
+            var info = document.createElement('div');
+            info.className = 'flex-1 min-w-0';
+            var titleEl = document.createElement('div');
+            titleEl.className = 'text-xs font-medium text-neutral-700 dark:text-neutral-200 truncate';
+            titleEl.textContent = pl.name + ' (' + pl.tracks.length + ')';
+            info.appendChild(titleEl);
+
+            var playAllBtn = document.createElement('button');
+            playAllBtn.className = 'text-xs text-(--primary) hover:underline shrink-0 opacity-0 group-hover:opacity-100 transition-opacity';
+            playAllBtn.textContent = '▸ ' + cfg.i18n.playAll;
+            playAllBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                playPlaylistTracks(pl);
+            });
+
+            var delBtn = document.createElement('button');
+            delBtn.className = 'text-neutral-400 hover:text-red-500 transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
+            delBtn.innerHTML = TRASH_ICON;
+            delBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                if (confirm(cfg.i18n.removeSource + ' "' + pl.name + '"?')) {
+                    mgr.deletePlaylist(pl.id);
+                }
+            });
+
+            header.appendChild(arrow);
+            header.appendChild(info);
+            header.appendChild(playAllBtn);
+            header.appendChild(delBtn);
+
+            var trackContainer = document.createElement('div');
+            trackContainer.className = 'playlist-tracks pl-4 hidden overflow-hidden';
+            trackContainer.style.transition = 'max-height 0.3s ease';
+
+            header.addEventListener('click', function () {
+                if (trackContainer.classList.contains('hidden')) {
+                    expandPlaylist(pl, trackContainer, arrow);
+                } else {
+                    collapsePlaylist(trackContainer, arrow);
+                }
+            });
+
+            wrapper.appendChild(header);
+            wrapper.appendChild(trackContainer);
+            return wrapper;
+        }
+
+        function expandPlaylist(pl, trackContainer, arrow) {
+            expandedPlaylistId = pl.id;
+            trackContainer.classList.remove('hidden');
+            trackContainer.style.maxHeight = '500px';
+            arrow.innerHTML = COLLAPSE_ICON;
+            trackContainer.innerHTML = '';
+
+            if (pl.tracks.length === 0) {
+                var emptyEl = document.createElement('div');
+                emptyEl.className = 'text-[10px] text-neutral-400 py-1';
+                emptyEl.textContent = cfg.i18n.noSavedSources;
+                trackContainer.appendChild(emptyEl);
+            } else {
+                pl.tracks.forEach(function (t) {
+                    var tItem = buildTrackSubItem(t, pl.id);
+                    trackContainer.appendChild(tItem);
+                });
+            }
+        }
+
+        function collapsePlaylist(trackContainer, arrow) {
+            expandedPlaylistId = null;
+            trackContainer.classList.add('hidden');
+            trackContainer.style.maxHeight = '0';
+            arrow.innerHTML = EXPAND_ICON;
+        }
+
+        function buildTrackSubItem(track, plId) {
+            var item = document.createElement('div');
+            item.className = 'flex items-center gap-2 py-1 px-1.5 rounded cursor-pointer hover:bg-neutral-50 dark:hover:bg-white/5 transition-colors group';
+
+            var info = document.createElement('div');
+            info.className = 'flex-1 min-w-0';
+            var titleEl = document.createElement('div');
+            titleEl.className = 'text-[11px] text-neutral-600 dark:text-neutral-300 truncate';
+            titleEl.textContent = track.title || track.bvid;
+            var subEl = document.createElement('div');
+            subEl.className = 'text-[9px] text-neutral-400 truncate';
+            subEl.textContent = (track.artist || '') + ' · ' + track.bvid;
+            info.appendChild(titleEl);
+            info.appendChild(subEl);
+
+            var removeBtn = document.createElement('button');
+            removeBtn.className = 'text-neutral-400 hover:text-red-500 transition-colors p-0.5 opacity-0 group-hover:opacity-100 shrink-0';
+            removeBtn.innerHTML = TRASH_ICON;
+            removeBtn.setAttribute('aria-label', cfg.i18n.removeFromPlaylist);
+            removeBtn.addEventListener('click', function (e) {
+                e.stopPropagation();
+                mgr.removeFromPlaylist(plId, track.bvid);
+            });
+
+            item.appendChild(info);
+            item.appendChild(removeBtn);
+            item.addEventListener('click', function () {
+                closeSourceDrawer();
+                mgr.setBilibiliSource('video', track.bvid);
+            });
+            return item;
+        }
+
+        function playPlaylistTracks(pl) {
+            if (pl.tracks.length === 0) return;
+            closeSourceDrawer();
+            // Set the first track and let init flow handle it
+            mgr.setBilibiliSource('video', pl.tracks[0].bvid);
+            // The playlist will only have one track from bilibili. 
+            // For full playlist playback, we queue all tracks.
+            // Since bilibili mode only supports single track, play first one.
+        }
+
+        // Create playlist button
+        if (playlistCreateBtn && playlistCreateInput) {
+            playlistCreateBtn.addEventListener('click', function () {
+                var name = playlistCreateInput.value.trim();
+                if (!name) return;
+                mgr.createPlaylist(name);
+                playlistCreateInput.value = '';
+            });
+            playlistCreateInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    var name = playlistCreateInput.value.trim();
+                    if (!name) return;
+                    mgr.createPlaylist(name);
+                    playlistCreateInput.value = '';
+                }
+            });
+        }
+
+        // Listen for playlist updates
+        on('fm:playlists', function () {
+            renderPlaylists();
+        });
 
         // Allow Enter key to submit
         ui.sourceInput.addEventListener('keydown', function (e) {

@@ -42,9 +42,7 @@ export const ru: Translation = {
 	[Key.musicAudioPlayer]: "Аудиоплеер",
 	[Key.musicSource]: "Источник",
 	[Key.musicSourceVideo]: "Одно видео",
-	[Key.musicSourcePlaylist]: "Сборник",
 	[Key.musicSourceInputHint]: "Введите BV ID",
-	[Key.musicSourceInputHintPlaylist]: "ID коллекции",
 	[Key.musicSourceApply]: "Применить",
 	[Key.musicSourceCurrent]: "Текущий: {id}",
 	[Key.musicModeMeting]: "Онлайн (Meting)",
@@ -57,6 +55,11 @@ export const ru: Translation = {
 	[Key.musicNoSavedSources]:
 		"Нет сохранённых. Введите BV ID и нажмите Сохранить.",
 	[Key.musicPlayAll]: "Всё",
+	[Key.musicNewPlaylist]: "Новый плейлист",
+	[Key.musicPlaylistHint]: "Название плейлиста…",
+	[Key.musicCreatePlaylist]: "Создать",
+	[Key.musicAddToPlaylist]: "Добавить в плейлист",
+	[Key.musicRemoveFromPlaylist]: "Удалить из плейлиста",
 
 	// Объявление
 	[Key.announcement]: "Объявление",

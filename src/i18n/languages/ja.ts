@@ -42,9 +42,7 @@ export const ja: Translation = {
 	[Key.musicAudioPlayer]: "オーディオプレーヤー",
 	[Key.musicSource]: "音源",
 	[Key.musicSourceVideo]: "単一動画",
-	[Key.musicSourcePlaylist]: "コレクション",
 	[Key.musicSourceInputHint]: "BV番号を入力",
-	[Key.musicSourceInputHintPlaylist]: "コレクションIDを入力",
 	[Key.musicSourceApply]: "適用",
 	[Key.musicSourceCurrent]: "現在：{id}",
 	[Key.musicModeMeting]: "オンライン (Meting)",
@@ -57,6 +55,11 @@ export const ja: Translation = {
 	[Key.musicNoSavedSources]:
 		"まだ保存されていません。BV番号を入力して保存してください。",
 	[Key.musicPlayAll]: "全て再生",
+	[Key.musicNewPlaylist]: "新規プレイリスト",
+	[Key.musicPlaylistHint]: "プレイリスト名を入力…",
+	[Key.musicCreatePlaylist]: "作成",
+	[Key.musicAddToPlaylist]: "プレイリストに追加",
+	[Key.musicRemoveFromPlaylist]: "プレイリストから削除",
 
 	// お知らせ
 	[Key.announcement]: "お知らせ",

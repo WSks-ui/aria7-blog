@@ -206,18 +206,10 @@ const managerConfigStr = JSON.stringify({
 
         // ── Layer 2: Bilibili 官方 API 获取真实音频流 ──────────
         try {
-            if (type === 'video') {
-                var tracks = await fetchBilibiliVideoTracks(id);
-                if (tracks.length > 0) {
-                    state.playlist = tracks;
-                    return;
-                }
-            } else if (type === 'playlist') {
-                var tracks = await fetchBilibiliCollectionTracks(id);
-                if (tracks.length > 0) {
-                    state.playlist = tracks;
-                    return;
-                }
+            var tracks = await fetchBilibiliVideoTracks(id);
+            if (tracks.length > 0) {
+                state.playlist = tracks;
+                return;
             }
         } catch (e) {
             console.warn('Bilibili official API fallback failed:', e);
@@ -263,16 +255,6 @@ const managerConfigStr = JSON.stringify({
             pic: meta.pic || '',
             lrc: ''
         }];
-    }
-
-    async function fetchBilibiliCollectionTracks(mediaId) {
-        if (!mediaId) return [];
-        var url = '/api/bilibili-collection?media_id=' + encodeURIComponent(mediaId);
-        var res = await fetch(url);
-        if (!res.ok) throw new Error('Collection proxy HTTP ' + res.status);
-        var data = await res.json();
-        if (data.error) throw new Error(data.error);
-        return data.data || [];
     }
 
     // ── Lyrics ───────────────────────────────────────────────
@@ -543,6 +525,84 @@ const managerConfigStr = JSON.stringify({
         emit('fm:saved-sources', { sources: getSavedSources() });
     }
 
+    // ── Custom Playlists ────────────────────────────────────
+    var PLAYLIST_KEY = 'music-custom-playlists';
+
+    function getPlaylists() {
+        try {
+            var raw = localStorage.getItem(PLAYLIST_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function savePlaylists(playlists) {
+        try {
+            localStorage.setItem(PLAYLIST_KEY, JSON.stringify(playlists));
+        } catch (e) {}
+    }
+
+    function createPlaylist(name) {
+        if (!name || !name.trim()) return null;
+        var playlists = getPlaylists();
+        var id = 'pl_' + Date.now().toString(36) + '_' + Math.random().toString(36).substr(2, 6);
+        var pl = {
+            id: id,
+            name: name.trim(),
+            tracks: [],
+            createdAt: Date.now()
+        };
+        playlists.push(pl);
+        savePlaylists(playlists);
+        broadcastPlaylists();
+        return pl;
+    }
+
+    function deletePlaylist(id) {
+        var playlists = getPlaylists().filter(function (p) { return p.id !== id; });
+        savePlaylists(playlists);
+        broadcastPlaylists();
+    }
+
+    function addToPlaylist(playlistId, bvid, title, artist, pic) {
+        var playlists = getPlaylists();
+        for (var i = 0; i < playlists.length; i++) {
+            if (playlists[i].id === playlistId) {
+                var exists = playlists[i].tracks.some(function (t) { return t.bvid === bvid; });
+                if (!exists) {
+                    playlists[i].tracks.push({
+                        bvid: bvid,
+                        title: title || bvid,
+                        artist: artist || '',
+                        pic: pic || ''
+                    });
+                }
+                playlists[i].updatedAt = Date.now();
+                break;
+            }
+        }
+        savePlaylists(playlists);
+        broadcastPlaylists();
+    }
+
+    function removeFromPlaylist(playlistId, bvid) {
+        var playlists = getPlaylists();
+        for (var i = 0; i < playlists.length; i++) {
+            if (playlists[i].id === playlistId) {
+                playlists[i].tracks = playlists[i].tracks.filter(function (t) { return t.bvid !== bvid; });
+                playlists[i].updatedAt = Date.now();
+                break;
+            }
+        }
+        savePlaylists(playlists);
+        broadcastPlaylists();
+    }
+
+    function broadcastPlaylists() {
+        emit('fm:playlists', { playlists: getPlaylists() });
+    }
+
     // ── Audio events → broadcast ─────────────────────────────
     audio.addEventListener('timeupdate', function () {
         if (isNaN(audio.duration)) return;
@@ -698,6 +758,12 @@ const managerConfigStr = JSON.stringify({
         addSavedSource: addSavedSource,
         removeSavedSource: removeSavedSource,
         broadcastSavedSources: broadcastSavedSources,
+        getPlaylists: getPlaylists,
+        createPlaylist: createPlaylist,
+        deletePlaylist: deletePlaylist,
+        addToPlaylist: addToPlaylist,
+        removeFromPlaylist: removeFromPlaylist,
+        broadcastPlaylists: broadcastPlaylists,
         loadTrack: loadTrack
     };
 })();

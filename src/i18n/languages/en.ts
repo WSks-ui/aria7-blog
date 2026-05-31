@@ -42,9 +42,7 @@ export const en: Translation = {
 	[Key.musicAudioPlayer]: "Audio Player",
 	[Key.musicSource]: "Source",
 	[Key.musicSourceVideo]: "Single Video",
-	[Key.musicSourcePlaylist]: "Collection",
 	[Key.musicSourceInputHint]: "Enter BV ID",
-	[Key.musicSourceInputHintPlaylist]: "Enter Collection ID",
 	[Key.musicSourceApply]: "Apply",
 	[Key.musicSourceCurrent]: "Current: {id}",
 	[Key.musicModeMeting]: "Online (Meting)",
@@ -57,6 +55,11 @@ export const en: Translation = {
 	[Key.musicNoSavedSources]:
 		"No saved sources yet. Enter a BV ID and click Save.",
 	[Key.musicPlayAll]: "Play All",
+	[Key.musicNewPlaylist]: "New Playlist",
+	[Key.musicPlaylistHint]: "Enter playlist name…",
+	[Key.musicCreatePlaylist]: "Create",
+	[Key.musicAddToPlaylist]: "Add to Playlist",
+	[Key.musicRemoveFromPlaylist]: "Remove from Playlist",
 
 	// Announcement
 	[Key.announcement]: "Announcement",

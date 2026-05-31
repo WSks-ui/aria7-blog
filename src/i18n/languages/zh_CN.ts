@@ -42,9 +42,7 @@ export const zh_CN: Translation = {
 	[Key.musicAudioPlayer]: "音频播放器",
 	[Key.musicSource]: "音源",
 	[Key.musicSourceVideo]: "单个视频",
-	[Key.musicSourcePlaylist]: "收藏夹",
 	[Key.musicSourceInputHint]: "输入 BV 号",
-	[Key.musicSourceInputHintPlaylist]: "输入收藏夹 ID",
 	[Key.musicSourceApply]: "应用",
 	[Key.musicSourceCurrent]: "当前：{id}",
 	[Key.musicModeMeting]: "在线音乐 (Meting)",
@@ -56,6 +54,11 @@ export const zh_CN: Translation = {
 	[Key.musicRemoveSource]: "删除",
 	[Key.musicNoSavedSources]: "暂无收藏，输入 BV 号后点击「收藏」添加",
 	[Key.musicPlayAll]: "全部播放",
+	[Key.musicNewPlaylist]: "新建播放列表",
+	[Key.musicPlaylistHint]: "输入播放列表名称…",
+	[Key.musicCreatePlaylist]: "新建",
+	[Key.musicAddToPlaylist]: "添加到播放列表",
+	[Key.musicRemoveFromPlaylist]: "移出播放列表",
 
 	// 公告栏
 	[Key.announcement]: "公告",

@@ -61,9 +61,7 @@ enum I18nKey {
 	musicAudioPlayer = "musicAudioPlayer",
 	musicSource = "musicSource",
 	musicSourceVideo = "musicSourceVideo",
-	musicSourcePlaylist = "musicSourcePlaylist",
 	musicSourceInputHint = "musicSourceInputHint",
-	musicSourceInputHintPlaylist = "musicSourceInputHintPlaylist",
 	musicSourceApply = "musicSourceApply",
 	musicSourceCurrent = "musicSourceCurrent",
 	musicModeMeting = "musicModeMeting",
@@ -75,6 +73,11 @@ enum I18nKey {
 	musicRemoveSource = "musicRemoveSource",
 	musicNoSavedSources = "musicNoSavedSources",
 	musicPlayAll = "musicPlayAll",
+	musicNewPlaylist = "musicNewPlaylist",
+	musicPlaylistHint = "musicPlaylistHint",
+	musicCreatePlaylist = "musicCreatePlaylist",
+	musicAddToPlaylist = "musicAddToPlaylist",
+	musicRemoveFromPlaylist = "musicRemoveFromPlaylist",
 
 	themeColor = "themeColor",
 
