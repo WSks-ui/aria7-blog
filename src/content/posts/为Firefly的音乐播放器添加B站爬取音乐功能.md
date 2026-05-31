@@ -272,4 +272,4 @@ var observer = new MutationObserver(function (mutations) {
 
 代码托管在[GitHub](https://github.com/WSks-ui/aria7-blog)上，欢迎指教和Star。
 
-如果你也在用Firefly，希望这篇博客能给你一些魔改的灵感。
+如果你也在用Astro + Firefly，希望这篇博客能给你一些魔改的灵感。
