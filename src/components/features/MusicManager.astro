@@ -554,10 +554,20 @@ const managerConfigStr = JSON.stringify({
     function getSavedSources() {
         try {
             var raw = localStorage.getItem(SAVED_KEY);
-            return raw ? JSON.parse(raw) : [];
-        } catch (e) {
-            return [];
-        }
+            if (raw) return JSON.parse(raw);
+        } catch (e) {}
+        var seedKey = SAVED_KEY + '-seeded';
+        if (localStorage.getItem(seedKey)) return [];
+        var defaults = [
+            { id: 'BV1xFVN6REKA', type: 'video', title: 'BV1xFVN6REKA', artist: '', pic: '', savedAt: Date.now() },
+            { id: 'BV1JwGB6zERz', type: 'video', title: 'BV1JwGB6zERz', artist: '', pic: '', savedAt: Date.now() },
+            { id: 'BV1sJVL6QEDy', type: 'video', title: 'BV1sJVL6QEDy', artist: '', pic: '', savedAt: Date.now() }
+        ];
+        try {
+            localStorage.setItem(SAVED_KEY, JSON.stringify(defaults));
+            localStorage.setItem(seedKey, '1');
+        } catch (e) {}
+        return defaults;
     }
 
     function addSavedSource(type, id, title, artist, pic) {
