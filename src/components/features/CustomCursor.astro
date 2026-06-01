@@ -47,10 +47,10 @@ import "@/styles/custom-cursor.css";
       gPointer.style.transform = buildTransform(e.clientX, e.clientY);
       var el = document.createElement("div");
       el.className = "click-effect";
-      el.style.left = (e.clientX - 6) + "px";
-      el.style.top = (e.clientY - 6) + "px";
-      el.style.width = "12px";
-      el.style.height = "12px";
+      el.style.left = (e.clientX - 17) + "px";
+      el.style.top = (e.clientY - 17) + "px";
+      el.style.width = "34px";
+      el.style.height = "34px";
       document.body.appendChild(el);
       el.addEventListener("animationend", function () {
         el.remove();
