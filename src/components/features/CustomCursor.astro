@@ -1,0 +1,150 @@
+---
+import "@/styles/custom-cursor.css";
+---
+
+<script is:inline>
+  (function () {
+    if (window.__customCursorInitialized) return;
+    window.__customCursorInitialized = true;
+
+    const MIN_WIDTH = 1024;
+
+    let follower = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+    let rafId = null;
+    let isEnabled = false;
+
+    function createFollower() {
+      if (follower) return;
+      follower = document.createElement("div");
+      follower.id = "cursor-follower";
+      document.body.appendChild(follower);
+    }
+
+    function removeFollower() {
+      if (!follower) return;
+      follower.remove();
+      follower = null;
+      currentX = 0;
+      currentY = 0;
+      targetX = 0;
+      targetY = 0;
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function animate() {
+      if (!isEnabled || !follower) {
+        rafId = requestAnimationFrame(animate);
+        return;
+      }
+
+      currentX = lerp(currentX, targetX, 0.15);
+      currentY = lerp(currentY, targetY, 0.15);
+      follower.style.left = currentX + "px";
+      follower.style.top = currentY + "px";
+
+      rafId = requestAnimationFrame(animate);
+    }
+
+    function onMouseMove(e) {
+      targetX = e.clientX;
+      targetY = e.clientY;
+    }
+
+    function onMouseEnterInteractive(e) {
+      const el = e.target;
+      if (!el || !follower) return;
+      if (
+        el.matches("a, button, [role='button'], summary, input, textarea, select, [contenteditable='true']")
+      ) {
+        follower.classList.add("is-hovering");
+      }
+    }
+
+    function onMouseLeaveInteractive(e) {
+      const el = e.target;
+      if (!el || !follower) return;
+      if (
+        el.matches("a, button, [role='button'], summary, input, textarea, select, [contenteditable='true']")
+      ) {
+        follower.classList.remove("is-hovering");
+      }
+    }
+
+    function onClick(e) {
+      if (!isEnabled) return;
+      const ripple = document.createElement("div");
+      ripple.className = "cursor-ripple";
+      ripple.style.left = e.clientX + "px";
+      ripple.style.top = e.clientY + "px";
+      document.body.appendChild(ripple);
+      ripple.addEventListener("animationend", () => ripple.remove());
+    }
+
+    function activate() {
+      if (window.innerWidth < MIN_WIDTH) return;
+      if (isEnabled) return;
+
+      document.documentElement.classList.add("custom-cursor-active");
+      createFollower();
+      currentX = targetX = window.innerWidth / 2;
+      currentY = targetY = window.innerHeight / 2;
+      document.addEventListener("mousemove", onMouseMove, { passive: true });
+      document.addEventListener("mouseover", onMouseEnterInteractive, { passive: true });
+      document.addEventListener("mouseout", onMouseLeaveInteractive, { passive: true });
+      document.addEventListener("click", onClick, { passive: true });
+      isEnabled = true;
+
+      if (!rafId) {
+        rafId = requestAnimationFrame(animate);
+      }
+    }
+
+    function deactivate() {
+      if (!isEnabled) return;
+      document.documentElement.classList.remove("custom-cursor-active");
+      removeFollower();
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseover", onMouseEnterInteractive);
+      document.removeEventListener("mouseout", onMouseLeaveInteractive);
+      document.removeEventListener("click", onClick);
+      isEnabled = false;
+    }
+
+    function onResize() {
+      if (window.innerWidth >= MIN_WIDTH) {
+        if (!isEnabled) activate();
+      } else {
+        if (isEnabled) deactivate();
+      }
+    }
+
+    window.addEventListener("resize", onResize, { passive: true });
+
+    function setup() {
+      onResize();
+    }
+
+    function reinit() {
+      deactivate();
+      setTimeout(() => activate(), 100);
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", setup);
+    } else {
+      setup();
+    }
+
+    window.addEventListener("astro:page-load", reinit);
+    if (window.swup) {
+      window.swup.hooks.on("content:replace", () => reinit());
+    }
+  })();
+</script>

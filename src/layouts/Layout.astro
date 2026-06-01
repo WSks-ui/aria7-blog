@@ -6,6 +6,7 @@ import UmamiAnalytics from "@components/analytics/UmamiAnalytics.astro";
 import FancyboxManager from "@components/features/FancyboxManager.astro";
 import FontManager from "@components/features/FontManager.astro";
 import MusicManager from "@components/features/MusicManager.astro";
+import CustomCursor from "@components/features/CustomCursor.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
 
@@ -580,6 +581,9 @@ const siteLang = lang.replace("_", "-");
     <slot />
 
 
+
+    <!-- Custom Cursor Effect -->
+    <CustomCursor />
 
     <!-- Sakura Effect -->
     <SakuraEffect />

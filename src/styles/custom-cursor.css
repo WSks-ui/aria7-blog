@@ -1,0 +1,84 @@
+/* ==========================================
+   自定义鼠标光标效果
+   策略：cursor: none 隐藏原生光标 + div 模拟
+   仅在桌面端（>= 1024px）生效
+   ========================================== */
+
+/* 隐藏系统光标 */
+html.custom-cursor-active,
+html.custom-cursor-active * {
+  cursor: none !important;
+}
+
+/* 鼠标跟随灰圆 */
+#cursor-follower {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  background: rgba(128, 128, 128, 0.25);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 999999;
+  transform: translate(-50%, -50%);
+  will-change: left, top;
+  transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+}
+
+html.dark #cursor-follower {
+  background: rgba(200, 200, 200, 0.3);
+}
+
+/* 悬停可交互元素时放大 */
+#cursor-follower.is-hovering {
+  width: 32px;
+  height: 32px;
+  background: rgba(128, 128, 128, 0.15);
+}
+
+html.dark #cursor-follower.is-hovering {
+  background: rgba(200, 200, 200, 0.18);
+}
+
+/* 点击涟漪 */
+.cursor-ripple {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(128, 128, 128, 0.15);
+  pointer-events: none;
+  z-index: 999998;
+  width: 0;
+  height: 0;
+  transform: translate(-50%, -50%);
+  animation: cursorRipple 0.6s ease-out forwards;
+}
+
+html.dark .cursor-ripple {
+  background: rgba(200, 200, 200, 0.15);
+}
+
+@keyframes cursorRipple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 64px;
+    height: 64px;
+    opacity: 0;
+  }
+}
+
+/* 移动端/平板端恢复系统光标并隐藏跟随层 */
+@media (max-width: 1023px) {
+  html.custom-cursor-active,
+  html.custom-cursor-active * {
+    cursor: auto !important;
+  }
+
+  #cursor-follower {
+    display: none;
+  }
+}
