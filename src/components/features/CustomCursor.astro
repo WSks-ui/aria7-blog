@@ -7,84 +7,62 @@ import "@/styles/custom-cursor.css";
     if (window.__customCursorInitialized) return;
     window.__customCursorInitialized = true;
 
-    const MIN_WIDTH = 1024;
+    var MIN_WIDTH = 1024;
+    var gPointer = null;
+    var isEnabled = false;
+    var isPressing = false;
 
-    let follower = null;
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
-    let rafId = null;
-    let isEnabled = false;
-
-    function createFollower() {
-      if (follower) return;
-      follower = document.createElement("div");
-      follower.id = "cursor-follower";
-      document.body.appendChild(follower);
+    function createPointer() {
+      if (gPointer) return;
+      gPointer = document.createElement("div");
+      gPointer.id = "g-pointer";
+      document.body.appendChild(gPointer);
     }
 
-    function removeFollower() {
-      if (!follower) return;
-      follower.remove();
-      follower = null;
-      currentX = 0;
-      currentY = 0;
-      targetX = 0;
-      targetY = 0;
+    function removePointer() {
+      if (!gPointer) return;
+      gPointer.remove();
+      gPointer = null;
     }
 
-    function lerp(a, b, t) {
-      return a + (b - a) * t;
-    }
-
-    function animate() {
-      if (!isEnabled || !follower) {
-        rafId = requestAnimationFrame(animate);
-        return;
-      }
-
-      currentX = lerp(currentX, targetX, 0.15);
-      currentY = lerp(currentY, targetY, 0.15);
-      follower.style.left = currentX + "px";
-      follower.style.top = currentY + "px";
-
-      rafId = requestAnimationFrame(animate);
+    function buildTransform(x, y) {
+      var t = "translate(" + (x - 8.5) + "px, " + (y - 8.5) + "px)";
+      if (isPressing) t += " scale(0.15)";
+      return t;
     }
 
     function onMouseMove(e) {
-      targetX = e.clientX;
-      targetY = e.clientY;
+      gPointer.style.transform = buildTransform(e.clientX, e.clientY);
     }
 
-    function onMouseEnterInteractive(e) {
-      const el = e.target;
-      if (!el || !follower) return;
-      if (
-        el.matches("a, button, [role='button'], summary, input, textarea, select, [contenteditable='true']")
-      ) {
-        follower.classList.add("is-hovering");
-      }
-    }
-
-    function onMouseLeaveInteractive(e) {
-      const el = e.target;
-      if (!el || !follower) return;
-      if (
-        el.matches("a, button, [role='button'], summary, input, textarea, select, [contenteditable='true']")
-      ) {
-        follower.classList.remove("is-hovering");
-      }
-    }
-
-    function onClick(e) {
+    function onMouseDown(e) {
       if (!isEnabled) return;
-      const ripple = document.createElement("div");
-      ripple.className = "cursor-ripple";
-      ripple.style.left = e.clientX + "px";
-      ripple.style.top = e.clientY + "px";
-      document.body.appendChild(ripple);
-      ripple.addEventListener("animationend", () => ripple.remove());
+      isPressing = true;
+      gPointer.style.transform = buildTransform(e.clientX, e.clientY);
+    }
+
+    function onMouseUp(e) {
+      if (!isEnabled) return;
+      isPressing = false;
+      gPointer.style.transform = buildTransform(e.clientX, e.clientY);
+      var el = document.createElement("div");
+      el.className = "click-effect";
+      el.style.left = (e.clientX - 6) + "px";
+      el.style.top = (e.clientY - 6) + "px";
+      el.style.width = "12px";
+      el.style.height = "12px";
+      document.body.appendChild(el);
+      el.addEventListener("animationend", function () {
+        el.remove();
+      });
+    }
+
+    function onContextMenu(e) {
+      e.preventDefault();
+    }
+
+    function onSelectStart(e) {
+      e.preventDefault();
     }
 
     function activate() {
@@ -92,28 +70,24 @@ import "@/styles/custom-cursor.css";
       if (isEnabled) return;
 
       document.documentElement.classList.add("custom-cursor-active");
-      createFollower();
-      currentX = targetX = window.innerWidth / 2;
-      currentY = targetY = window.innerHeight / 2;
+      createPointer();
       document.addEventListener("mousemove", onMouseMove, { passive: true });
-      document.addEventListener("mouseover", onMouseEnterInteractive, { passive: true });
-      document.addEventListener("mouseout", onMouseLeaveInteractive, { passive: true });
-      document.addEventListener("click", onClick, { passive: true });
+      document.addEventListener("mousedown", onMouseDown);
+      document.addEventListener("mouseup", onMouseUp);
+      document.addEventListener("contextmenu", onContextMenu);
+      document.addEventListener("selectstart", onSelectStart);
       isEnabled = true;
-
-      if (!rafId) {
-        rafId = requestAnimationFrame(animate);
-      }
     }
 
     function deactivate() {
       if (!isEnabled) return;
       document.documentElement.classList.remove("custom-cursor-active");
-      removeFollower();
+      removePointer();
       document.removeEventListener("mousemove", onMouseMove);
-      document.removeEventListener("mouseover", onMouseEnterInteractive);
-      document.removeEventListener("mouseout", onMouseLeaveInteractive);
-      document.removeEventListener("click", onClick);
+      document.removeEventListener("mousedown", onMouseDown);
+      document.removeEventListener("mouseup", onMouseUp);
+      document.removeEventListener("contextmenu", onContextMenu);
+      document.removeEventListener("selectstart", onSelectStart);
       isEnabled = false;
     }
 
@@ -127,13 +101,11 @@ import "@/styles/custom-cursor.css";
 
     window.addEventListener("resize", onResize, { passive: true });
 
-    function setup() {
-      onResize();
-    }
+    function setup() { onResize(); }
 
     function reinit() {
       deactivate();
-      setTimeout(() => activate(), 100);
+      setTimeout(function () { activate(); }, 100);
     }
 
     if (document.readyState === "loading") {
@@ -144,7 +116,7 @@ import "@/styles/custom-cursor.css";
 
     window.addEventListener("astro:page-load", reinit);
     if (window.swup) {
-      window.swup.hooks.on("content:replace", () => reinit());
+      window.swup.hooks.on("content:replace", function () { reinit(); });
     }
   })();
 </script>

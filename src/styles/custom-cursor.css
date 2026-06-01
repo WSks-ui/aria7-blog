@@ -1,84 +1,68 @@
 /* ==========================================
    自定义鼠标光标效果
-   策略：cursor: none 隐藏原生光标 + div 模拟
+   基于 https://shiyin.cafe/ 方案
    仅在桌面端（>= 1024px）生效
    ========================================== */
 
-/* 隐藏系统光标 */
 html.custom-cursor-active,
 html.custom-cursor-active * {
-  cursor: none !important;
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' width='10px' height='10px'><circle cx='4' cy='4' r='4' fill='white' /></svg>") 4 4, auto !important;
 }
 
-/* 鼠标跟随灰圆 */
-#cursor-follower {
+html.dark.custom-cursor-active,
+html.dark.custom-cursor-active * {
+  cursor: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8' width='10px' height='10px'><circle cx='4' cy='4' r='4' fill='white' /></svg>") 4 4, auto !important;
+}
+
+#g-pointer {
   position: fixed;
   top: 0;
   left: 0;
-  width: 16px;
-  height: 16px;
-  background: rgba(128, 128, 128, 0.25);
-  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  transition: transform 0.1s ease;
+  will-change: transform;
   pointer-events: none;
-  z-index: 999999;
-  transform: translate(-50%, -50%);
-  will-change: left, top;
-  transition: width 0.15s ease, height 0.15s ease, background 0.15s ease;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  z-index: 9999999;
 }
 
-html.dark #cursor-follower {
-  background: rgba(200, 200, 200, 0.3);
+html.dark #g-pointer {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-/* 悬停可交互元素时放大 */
-#cursor-follower.is-hovering {
-  width: 32px;
-  height: 32px;
-  background: rgba(128, 128, 128, 0.15);
-}
-
-html.dark #cursor-follower.is-hovering {
-  background: rgba(200, 200, 200, 0.18);
-}
-
-/* 点击涟漪 */
-.cursor-ripple {
+.click-effect {
   position: fixed;
+  background: rgba(0, 0, 0, 0.3);
   border-radius: 50%;
-  background: rgba(128, 128, 128, 0.15);
+  transform: scale(0);
+  animation: clickAnimation 0.6s ease-out;
   pointer-events: none;
-  z-index: 999998;
-  width: 0;
-  height: 0;
-  transform: translate(-50%, -50%);
-  animation: cursorRipple 0.6s ease-out forwards;
+  z-index: 9999999;
 }
 
-html.dark .cursor-ripple {
-  background: rgba(200, 200, 200, 0.15);
+html.dark .click-effect {
+  background: rgba(255, 255, 255, 0.25);
 }
 
-@keyframes cursorRipple {
+@keyframes clickAnimation {
   0% {
-    width: 0;
-    height: 0;
-    opacity: 0.6;
+    transform: scale(0);
+    opacity: 0.8;
   }
   100% {
-    width: 64px;
-    height: 64px;
+    transform: scale(4);
     opacity: 0;
   }
 }
 
-/* 移动端/平板端恢复系统光标并隐藏跟随层 */
 @media (max-width: 1023px) {
   html.custom-cursor-active,
   html.custom-cursor-active * {
     cursor: auto !important;
   }
-
-  #cursor-follower {
+  #g-pointer {
     display: none;
   }
 }
