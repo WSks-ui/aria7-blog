@@ -114,7 +114,7 @@ const widgetId =
 <!-- Progress Bar (Slim) -->
 <div class="px-1">
     <div class="progress-container relative w-full h-1 bg-neutral-100 dark:bg-neutral-700/50 rounded-full cursor-pointer touch-none mb-2 group mt-2" role="slider" aria-label={i18n(I18nKey.musicProgress)} aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-        <div class="progress-bar absolute left-0 top-0 h-full bg-(--primary) rounded-full w-0 transition-[width] duration-100"></div>
+        <div class="progress-bar absolute left-0 top-0 h-full w-full bg-(--primary) rounded-full transition-transform duration-100 origin-left scale-x-0"></div>
         <!-- Hover Thumb -->
         <div class="progress-thumb absolute top-1/2 -mt-1.5 -ml-1.5 w-3 h-3 bg-(--primary) ring-2 ring-white dark:ring-neutral-800 rounded-full shadow-sm scale-0 group-hover:scale-100 transition-transform duration-200"></div>
     </div>
@@ -287,11 +287,13 @@ const widgetId =
 </div>
 </template>
 
-<script define:vars={{ viewConfigStr, widgetId }} is:inline>
+<script define:vars={{ viewConfigStr, widgetId }} is:inline data-swup-ignore-script>
 (function () {
-    var cfg = JSON.parse(viewConfigStr);
     var widget = document.getElementById(widgetId);
-    if (!widget) return;
+    if (!widget || widget.dataset.fmInit) return;
+    widget.dataset.fmInit = '1';
+
+    var cfg = JSON.parse(viewConfigStr);
 
     var mgr = window.__fireflyMusic;
     if (!mgr) return;
@@ -481,7 +483,7 @@ const widgetId =
         ui.cover.style.animationPlayState = 'paused';
 
         // Reset progress
-        ui.progressBar.style.width = '0%';
+        ui.progressBar.style.transform = 'scaleX(0)';
         ui.progressThumb.style.left = '0%';
         ui.progressContainer.setAttribute('aria-valuenow', '0');
         ui.currentTime.innerText = '0:00';
@@ -538,16 +540,23 @@ const widgetId =
     function renderLyricsUI(lyrics, status) {
         local.currentLrcIndex = -1;
         ui.lrcContainer.innerHTML = '';
+
+        var statusEl = document.createElement('div');
+        statusEl.className = 'text-neutral-400 text-sm py-10';
         if (status === 'loading') {
-            ui.lrcContainer.innerHTML = '<div class="text-neutral-400 text-sm py-10">' + cfg.i18n.loadingLyrics + '</div>';
+            statusEl.textContent = cfg.i18n.loadingLyrics;
+            ui.lrcContainer.appendChild(statusEl);
             return;
         }
         if (status === 'failed') {
-            ui.lrcContainer.innerHTML = '<div class="text-neutral-400 text-sm py-10">' + cfg.i18n.failedLyrics + '</div>';
+            statusEl.textContent = cfg.i18n.failedLyrics;
+            ui.lrcContainer.appendChild(statusEl);
             return;
         }
         if (!lyrics || lyrics.length === 0) {
-            ui.lrcContainer.innerHTML = '<div class="text-neutral-400 text-sm py-10" role="option">' + cfg.i18n.noLyrics + '</div>';
+            statusEl.setAttribute('role', 'option');
+            statusEl.textContent = cfg.i18n.noLyrics;
+            ui.lrcContainer.appendChild(statusEl);
             return;
         }
         lyrics.forEach(function (line, index) {
@@ -613,7 +622,7 @@ const widgetId =
 
         // Progress
         if (s.duration > 0) {
-            ui.progressBar.style.width = s.progress + '%';
+            ui.progressBar.style.transform = 'scaleX(' + (s.progress / 100) + ')';
             ui.progressThumb.style.left = s.progress + '%';
             ui.progressContainer.setAttribute('aria-valuenow', Math.round(s.progress).toString());
             ui.currentTime.innerText = s.currentTimeStr;
@@ -668,7 +677,7 @@ const widgetId =
 
     on('fm:time', function (e) {
         var d = e.detail;
-        ui.progressBar.style.width = d.progress + '%';
+        ui.progressBar.style.transform = 'scaleX(' + (d.progress / 100) + ')';
         ui.progressThumb.style.left = d.progress + '%';
         ui.progressContainer.setAttribute('aria-valuenow', Math.round(d.progress).toString());
         ui.currentTime.innerText = d.currentTimeStr;
@@ -706,19 +715,106 @@ const widgetId =
     ui.btnRepeat.addEventListener('click', function () { mgr.cyclePlayMode(); });
     ui.btnMute.addEventListener('click', function () { mgr.toggleMute(); });
 
-    ui.volContainer.addEventListener('click', function (e) {
-        var rect = ui.volContainer.getBoundingClientRect();
-        var x = e.clientX - rect.left;
-        var val = Math.max(0, Math.min(1, x / rect.width));
-        mgr.setVolume(val);
-    });
+    // ── Volume bar drag ──────────────────────────────────
+    var volDragging = false;
 
-    ui.progressContainer.addEventListener('click', function (e) {
+    function getVolumePercent(e) {
+        var rect = ui.volContainer.getBoundingClientRect();
+        var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        return Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    }
+
+    function onVolumeStart(e) {
+        volDragging = true;
+        mgr.setVolume(getVolumePercent(e));
+        e.preventDefault();
+    }
+
+    function onVolumeMove(e) {
+        if (!volDragging) return;
+        mgr.setVolume(getVolumePercent(e));
+    }
+
+    function onVolumeEnd() {
+        volDragging = false;
+    }
+
+    ui.volContainer.addEventListener('mousedown', onVolumeStart);
+    ui.volContainer.addEventListener('touchstart', onVolumeStart, { passive: false });
+    document.addEventListener('mousemove', onVolumeMove);
+    document.addEventListener('mouseup', onVolumeEnd);
+    document.addEventListener('touchmove', onVolumeMove, { passive: false });
+    document.addEventListener('touchend', onVolumeEnd);
+
+    // ── Progress bar drag ────────────────────────────────
+    var progDragging = false;
+
+    function getProgressPercent(e) {
         var rect = ui.progressContainer.getBoundingClientRect();
-        var clickX = e.clientX - rect.left;
-        var percent = Math.min(Math.max(clickX / rect.width, 0), 1);
-        mgr.seek(percent);
-    });
+        var clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        return Math.min(Math.max((clientX - rect.left) / rect.width, 0), 1);
+    }
+
+    function onProgressStart(e) {
+        progDragging = true;
+        mgr.seek(getProgressPercent(e));
+        e.preventDefault();
+    }
+
+    function onProgressMove(e) {
+        if (!progDragging) return;
+        mgr.seek(getProgressPercent(e));
+    }
+
+    function onProgressEnd() {
+        progDragging = false;
+    }
+
+    ui.progressContainer.addEventListener('mousedown', onProgressStart);
+    document.addEventListener('mousemove', onProgressMove);
+    document.addEventListener('mouseup', onProgressEnd);
+    ui.progressContainer.addEventListener('touchstart', onProgressStart, { passive: false });
+    document.addEventListener('touchmove', onProgressMove, { passive: false });
+    document.addEventListener('touchend', onProgressEnd);
+
+    // ── Keyboard shortcuts ────────────────────────────────
+    var _keyboardHandler = function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+        switch (e.code) {
+            case 'Space':
+                e.preventDefault();
+                mgr.togglePlay();
+                break;
+            case 'ArrowLeft':
+                e.preventDefault();
+                var s = mgr.getState();
+                if (s.duration > 0) {
+                    mgr.seek(Math.max(0, s.currentTime - 5) / s.duration);
+                }
+                break;
+            case 'ArrowRight':
+                e.preventDefault();
+                var st = mgr.getState();
+                if (st.duration > 0) {
+                    mgr.seek(Math.min(st.duration, st.currentTime + 5) / st.duration);
+                }
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                var su = mgr.getState();
+                mgr.setVolume(Math.min(1, su.volume + 0.05));
+                break;
+            case 'ArrowDown':
+                e.preventDefault();
+                var sd = mgr.getState();
+                mgr.setVolume(Math.max(0, sd.volume - 0.05));
+                break;
+        }
+    };
+
+    document.addEventListener('keydown', _keyboardHandler);
 
     // ── Drawer logic (local state) ───────────────────────────
     ui.btnLrc.addEventListener('click', function () {
@@ -800,6 +896,8 @@ const widgetId =
                 });
                 updateBilibiliSectionVisibility(currentMode);
 
+                updateModeRadioUI(currentMode);
+
                 // Load saved sources list
                 mgr.broadcastSavedSources();
                 mgr.broadcastPlaylists();
@@ -829,11 +927,26 @@ const widgetId =
             }
         }
 
+        function updateModeRadioUI(mode) {
+            ui.modeRadios.forEach(function (r) {
+                var label = r.parentElement;
+                var isActive = r.value === mode;
+                label.classList.toggle('bg-(--primary)', isActive);
+                label.classList.toggle('text-white', isActive);
+                label.classList.toggle('border-(--primary)', isActive);
+                label.classList.toggle('border-neutral-200', !isActive);
+                label.classList.toggle('dark:border-neutral-700', !isActive);
+                label.classList.toggle('text-neutral-600', !isActive);
+                label.classList.toggle('dark:text-neutral-300', !isActive);
+            });
+        }
+
         // Mode radio change → switch mode
         ui.modeRadios.forEach(function (radio) {
             radio.addEventListener('change', function () {
                 if (!radio.checked) return;
                 var newMode = radio.value;
+                updateModeRadioUI(newMode);
                 closeSourceDrawer();
                 mgr.setMode(newMode);
             });
@@ -1244,6 +1357,8 @@ const widgetId =
     });
     ui.cover.addEventListener('error', function () {
         ui.cover.classList.add('opacity-0');
+        ui.cover.classList.remove('animate-spin-slow');
+        ui.cover.style.animationPlayState = 'paused';
     });
 
     // ── Cleanup on DOM removal ───────────────────────────────
@@ -1256,6 +1371,15 @@ const widgetId =
                         window.removeEventListener(name, handlers[name]);
                     });
                     document.removeEventListener('click', popupDocHandler, true);
+                    document.removeEventListener('keydown', _keyboardHandler);
+                    document.removeEventListener('mousemove', onProgressMove);
+                    document.removeEventListener('mouseup', onProgressEnd);
+                    document.removeEventListener('touchmove', onProgressMove);
+                    document.removeEventListener('touchend', onProgressEnd);
+                    document.removeEventListener('mousemove', onVolumeMove);
+                    document.removeEventListener('mouseup', onVolumeEnd);
+                    document.removeEventListener('touchmove', onVolumeMove);
+                    document.removeEventListener('touchend', onVolumeEnd);
                     observer.disconnect();
                     clearTimeout(local.scrollTimeout);
                     return;
