@@ -101,6 +101,19 @@ const managerConfigStr = JSON.stringify({
     audio.style.display = 'none';
     document.body.appendChild(audio);
 
+    // Media Session action handlers
+    if ('mediaSession' in navigator) {
+        navigator.mediaSession.setActionHandler('play', function () { togglePlay(); });
+        navigator.mediaSession.setActionHandler('pause', function () { togglePlay(); });
+        navigator.mediaSession.setActionHandler('previoustrack', function () { playPrev(); });
+        navigator.mediaSession.setActionHandler('nexttrack', function () { playNext(false); });
+        navigator.mediaSession.setActionHandler('seekto', function (details) {
+            if (details.seekTime != null && audio.duration) {
+                audio.currentTime = Math.max(0, Math.min(details.seekTime, audio.duration));
+            }
+        });
+    }
+
     // ── State ────────────────────────────────────────────────
     var state = {
         playlist: [],
@@ -257,6 +270,26 @@ const managerConfigStr = JSON.stringify({
         }];
     }
 
+    async function loadBilibiliTracksFromBvids(bvids) {
+        var tracks = [];
+        var limits = bvids.slice(0, 20);
+        for (var i = 0; i < limits.length; i++) {
+            try {
+                var t = await fetchBilibiliVideoTracks(limits[i]);
+                if (t.length > 0) tracks.push(t[0]);
+            } catch (e) {
+                tracks.push({
+                    name: limits[i],
+                    artist: '',
+                    url: '/api/bilibili-audio?bvid=' + limits[i],
+                    pic: '',
+                    lrc: ''
+                });
+            }
+        }
+        return tracks;
+    }
+
     // ── Lyrics ───────────────────────────────────────────────
     function loadLyrics(track) {
         state.lyrics = [];
@@ -292,6 +325,7 @@ const managerConfigStr = JSON.stringify({
     // ── Track loading ────────────────────────────────────────
     function loadTrack(index, autoPlay) {
         if (index < 0 || index >= state.playlist.length) return;
+        _errorRetryCount = 0;
         state.currentIndex = index;
         var track = state.playlist[index];
 
@@ -299,12 +333,26 @@ const managerConfigStr = JSON.stringify({
 
         loadLyrics(track);
 
+        // Media Session API
+        if ('mediaSession' in navigator) {
+            var artwork = [];
+            if (track.pic) artwork = [{ src: track.pic, sizes: '512x512', type: 'image/jpeg' }];
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.name,
+                artist: track.artist,
+                artwork: artwork
+            });
+        }
+
         emit('fm:track', { index: index, track: track, autoPlay: !!autoPlay });
 
         if (autoPlay) {
             audio.play().then(function () {
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
             }).catch(function (e) {
                 console.warn('Autoplay blocked:', e);
             });
@@ -320,11 +368,17 @@ const managerConfigStr = JSON.stringify({
             audio.play().then(function () {
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
+                if ('mediaSession' in navigator) {
+                    navigator.mediaSession.playbackState = 'playing';
+                }
             });
         } else {
             audio.pause();
             state.isPlaying = false;
             emit('fm:play-state', { isPlaying: false });
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
         }
     }
 
@@ -399,6 +453,7 @@ const managerConfigStr = JSON.stringify({
     // ── Mode switching (user can change mode from UI) ────────
     async function setMode(newMode) {
         if (newMode === config.mode && newMode !== 'bilibili') return;
+        if (_initPromise) await _initPromise;
 
         // Save to localStorage for persistence
         try {
@@ -430,15 +485,16 @@ const managerConfigStr = JSON.stringify({
 
     // ── Bilibili source switching (for user custom favorites) ─
     async function setBilibiliSource(type, id) {
-        if (config.mode !== 'bilibili') return;
+        if (_initPromise) await _initPromise;
 
         // Save to localStorage for persistence
         try {
             localStorage.setItem('music-bilibili-type', type);
             localStorage.setItem('music-bilibili-id', id);
+            localStorage.setItem('music-player-mode', 'bilibili');
         } catch (e) {}
 
-        // Update config
+        config.mode = 'bilibili';
         if (!config.bilibili) config.bilibili = {};
         config.bilibili.type = type;
         config.bilibili.id = id;
@@ -465,11 +521,11 @@ const managerConfigStr = JSON.stringify({
 
     async function setBilibiliPlaylist(bvids) {
         if (!bvids || bvids.length === 0) return;
+        if (_initPromise) await _initPromise;
 
-        // Save to localStorage
         try {
             localStorage.setItem('music-bilibili-type', 'playlist');
-            localStorage.setItem('music-bilibili-id', bvids[0]);
+            localStorage.setItem('music-bilibili-id', JSON.stringify(bvids));
         } catch (e) {}
 
         if (!config.bilibili) config.bilibili = {};
@@ -489,27 +545,12 @@ const managerConfigStr = JSON.stringify({
 
         emit('fm:loading', { loading: true });
 
-        var tracks = [];
-        var limits = bvids.slice(0, 20);
-        for (var i = 0; i < limits.length; i++) {
-            try {
-                var t = await fetchBilibiliVideoTracks(limits[i]);
-                if (t.length > 0) tracks.push(t[0]);
-            } catch (e) {
-                tracks.push({
-                    name: limits[i],
-                    artist: '',
-                    url: '/api/bilibili-audio?bvid=' + limits[i],
-                    pic: '',
-                    lrc: ''
-                });
-            }
-        }
+        var tracks = await loadBilibiliTracksFromBvids(bvids);
 
         if (tracks.length === 0) {
             state.initialized = true;
             state.error = 'Failed to load any track';
-            emit('fm:error', { error: state.error });
+            emit('fm:error', { message: state.error });
             return;
         }
 
@@ -731,16 +772,30 @@ const managerConfigStr = JSON.stringify({
         playNext(true);
     });
 
+    var _errorRetryCount = 0;
+    var _maxErrorRetry = 3;
+
     audio.addEventListener('error', function () {
-        state.error = 'Audio playback error';
-        emit('fm:error', { message: state.error });
+        _errorRetryCount++;
+        if (_errorRetryCount >= _maxErrorRetry) {
+            state.error = 'Audio playback error';
+            emit('fm:error', { message: state.error });
+            audio.pause();
+            state.isPlaying = false;
+            emit('fm:play-state', { isPlaying: false });
+            return;
+        }
+        playNext(true);
     });
 
     // ── Init (idempotent) ────────────────────────────────────
+    var _initPromise = null;
+
     async function init() {
         if (state.initialized || state.initializing) return;
         state.initializing = true;
 
+        _initPromise = (async function () {
         try {
             // Check localStorage for user-saved mode preference
             try {
@@ -763,10 +818,26 @@ const managerConfigStr = JSON.stringify({
                     savedId = localStorage.getItem('music-bilibili-id');
                 } catch (e) {}
                 if (savedType && savedId) {
-                    config.bilibili.type = savedType;
-                    config.bilibili.id = savedId;
+                    if (savedType === 'playlist' && savedId.charAt(0) === '[') {
+                        try {
+                            var bvids = JSON.parse(savedId);
+                            if (Array.isArray(bvids) && bvids.length > 0) {
+                                config.bilibili.type = 'playlist';
+                                state.playlist = await loadBilibiliTracksFromBvids(bvids);
+                            }
+                        } catch (e) {
+                            config.bilibili.type = savedType;
+                            config.bilibili.id = savedId;
+                            await fetchBilibiliData();
+                        }
+                    } else {
+                        config.bilibili.type = savedType;
+                        config.bilibili.id = savedId;
+                        await fetchBilibiliData();
+                    }
+                } else {
+                    await fetchBilibiliData();
                 }
-                await fetchBilibiliData();
             }
 
             if (state.playlist.length > 0) {
@@ -811,6 +882,7 @@ const managerConfigStr = JSON.stringify({
         } finally {
             state.initializing = false;
         }
+        })();
     }
 
     // ── Public API ───────────────────────────────────────────
