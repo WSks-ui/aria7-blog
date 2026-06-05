@@ -330,6 +330,11 @@ const managerConfigStr = JSON.stringify({
         var track = state.playlist[index];
 
         audio.src = track.url;
+        // Explicitly call load() so the browser reliably re-fetches the new
+        // source even when src changes rapidly or when the previous source
+        // was cleared (e.g. setBilibili* resets). Without this some browsers
+        // keep showing the old buffered data and play() silently fails.
+        try { audio.load(); } catch (e) {}
 
         loadLyrics(track);
 
@@ -347,18 +352,50 @@ const managerConfigStr = JSON.stringify({
         emit('fm:track', { index: index, track: track, autoPlay: !!autoPlay });
 
         if (autoPlay) {
-            audio.play().then(function () {
+            var p = audio.play();
+            if (p && typeof p.then === 'function') {
+                p.then(function () {
+                    state.isPlaying = true;
+                    emit('fm:play-state', { isPlaying: true });
+                    if ('mediaSession' in navigator) {
+                        navigator.mediaSession.playbackState = 'playing';
+                    }
+                }).catch(function (e) {
+                    console.warn('Autoplay blocked or audio failed:', e);
+                    state.isPlaying = false;
+                    emit('fm:play-state', { isPlaying: false });
+                    emit('fm:error', { message: 'Playback blocked or audio error: ' + (e && e.message ? e.message : e) });
+                });
+            }
+        } else {
+            state.isPlaying = false;
+            emit('fm:play-state', { isPlaying: false });
+        }
+    }
+
+    // ── Play current track (used after init / queue add / source switch) ─
+    // Centralised so call sites don't have to duplicate the play()/Promise/error
+    // handling. Safe to call when the audio element has no source yet — the
+    // browser will reject the play() and we'll surface it via fm:error.
+    function playCurrent() {
+        if (!audio.src) {
+            emit('fm:error', { message: 'No track loaded' });
+            return;
+        }
+        var p = audio.play();
+        if (p && typeof p.then === 'function') {
+            p.then(function () {
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
                 if ('mediaSession' in navigator) {
                     navigator.mediaSession.playbackState = 'playing';
                 }
             }).catch(function (e) {
-                console.warn('Autoplay blocked:', e);
+                console.warn('Autoplay blocked or audio failed:', e);
+                state.isPlaying = false;
+                emit('fm:play-state', { isPlaying: false });
+                emit('fm:error', { message: 'Playback blocked or audio error: ' + (e && e.message ? e.message : e) });
             });
-        } else {
-            state.isPlaying = false;
-            emit('fm:play-state', { isPlaying: false });
         }
     }
 
@@ -474,6 +511,7 @@ const managerConfigStr = JSON.stringify({
         // Stop current playback
         audio.pause();
         audio.src = '';
+        try { audio.load(); } catch (e) {}
         state.isPlaying = false;
 
         // Show loading
@@ -507,9 +545,11 @@ const managerConfigStr = JSON.stringify({
         state.lyrics = [];
         state.currentLrcIndex = -1;
 
-        // Stop current playback
+        // Stop current playback and fully reset the audio element so the
+        // browser drops any cached buffer from the previous source.
         audio.pause();
         audio.src = '';
+        try { audio.load(); } catch (e) {}
         state.isPlaying = false;
 
         // Show loading
@@ -517,6 +557,13 @@ const managerConfigStr = JSON.stringify({
 
         // Re-fetch with new source
         await init();
+
+        // init() calls loadTrack(0, false) which only loads the source without
+        // playing. The user just clicked a source though, so kick off playback
+        // automatically — matches the behaviour of setBilibiliPlaylist().
+        if (state.initialized && state.playlist.length > 0) {
+            playCurrent();
+        }
     }
 
     async function setBilibiliPlaylist(bvids) {
@@ -541,6 +588,7 @@ const managerConfigStr = JSON.stringify({
 
         audio.pause();
         audio.src = '';
+        try { audio.load(); } catch (e) {}
         state.isPlaying = false;
 
         emit('fm:loading', { loading: true });
@@ -558,22 +606,33 @@ const managerConfigStr = JSON.stringify({
         state.initialized = true;
         state.error = null;
 
+        // Start playback BEFORE notifying the UI so the audio element and the
+        // play-state are consistent by the time the playlist is rendered. This
+        // avoids a brief window where the user can click a different item and
+        // have it immediately overwritten by loadTrack(0, true) below.
+        loadTrack(0, true);
+
         emit('fm:init', {
             playlist: state.playlist,
             currentIndex: 0,
-            isPlaying: false,
+            playMode: state.playMode,
+            volume: state.volume,
+            isMuted: state.isMuted,
+            isPlaying: true,
             config: config
         });
 
         emit('fm:loading', { loading: false });
-        loadTrack(0, true);
     }
 
     async function addToBilibiliQueue(bvid) {
         if (!bvid) return;
+        var wasEmpty = state.playlist.length === 0;
+        var addedIndex = -1;
         try {
             var t = await fetchBilibiliVideoTracks(bvid);
             if (t.length === 0) return;
+            addedIndex = state.playlist.length;
             state.playlist.push(t[0]);
             emit('fm:queue-updated', { playlist: state.playlist });
         } catch (e) {
@@ -584,8 +643,16 @@ const managerConfigStr = JSON.stringify({
                 pic: '',
                 lrc: ''
             };
+            addedIndex = state.playlist.length;
             state.playlist.push(track);
             emit('fm:queue-updated', { playlist: state.playlist });
+        }
+
+        // If the queue was empty, the user clearly wants to hear this track
+        // — start playing it immediately. If there was already music queued or
+        // playing, leave the current track alone (queue semantics).
+        if (wasEmpty && addedIndex >= 0 && state.initialized) {
+            loadTrack(addedIndex, true);
         }
     }
 
