@@ -590,6 +590,12 @@ const siteLang = lang.replace("_", "-");
 
     <!-- Fancybox Manager -->
     <FancyboxManager />
+
+    <!-- Vercel Speed Insights -->
+    <script>
+      import { injectSpeedInsights } from '@vercel/speed-insights';
+      injectSpeedInsights();
+    </script>
   </body>
 </html>
 
@@ -1230,7 +1236,7 @@ function disableAnimation() {
               wrapper.classList.remove("mobile-hide-banner");
             }
             if (mainEl) {
-              // visit:start 已禁用过渡并移除了类，此处确认最终状态
+              // visit:start 已禁用过渡并移除了类���此处确认最终状态
               // 位置变化完成后，延迟恢复过渡动画（确保浏览器已应用新位置）
               setTimeout(() => {
                 mainEl.style.removeProperty("transition");
